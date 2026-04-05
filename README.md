@@ -19,9 +19,11 @@ Plateforme de partage de fichiers sécurisée — comme un Google Drive partagé
 ### Fichiers
 - Recherche, filtres par type/date/taille, pagination
 - Dossiers partagés pour organiser les fichiers
+- Créer et supprimer des dossiers
 - Déplacer des fichiers entre dossiers
 - Aperçu : images, PDF, vidéo, audio, code/texte
 - Partage par lien avec expiration (1h, 24h, 7j, 30j)
+- Page de partage dédiée : nom de l'uploader, taille, compte à rebours d'expiration, bouton de téléchargement
 
 ### Sécurité
 - Hash bcrypt (cost 12) avec rehash automatique
@@ -30,6 +32,7 @@ Plateforme de partage de fichiers sécurisée — comme un Google Drive partagé
 - Sessions sécurisées (HttpOnly, SameSite, régénération d'ID)
 - Blocage des extensions dangereuses (.exe, .php, etc.)
 - Protection path traversal
+- Cloudflare Turnstile sur la page de connexion (activable/désactivable via config)
 
 ### Interface
 - Design glassmorphism avec gradients
@@ -83,6 +86,28 @@ Après inscription, rendez-vous manuellement dans la base :
 
 ```sql
 UPDATE users SET role = 'admin' WHERE pseudo = 'votre_pseudo';
+```
+
+## Configuration
+
+### Cloudflare Turnstile
+
+Pour activer la vérification anti-robot sur la page de connexion, éditez `config/config.php` :
+
+```php
+define('TURNSTILE_ENABLED', true);  // true = activé, false = désactivé
+define('TURNSTILE_SITE_KEY', 'votre_site_key');
+define('TURNSTILE_SECRET_KEY', 'votre_secret_key');
+```
+
+Récupérez vos clés sur le [dashboard Cloudflare Turnstile](https://dash.cloudflare.com/?to=/:account/turnstile). Vous pouvez utiliser `localhost` comme domaine.
+
+### Fuseau horaire
+
+Le fuseau horaire est configuré sur `Europe/Paris` par défaut. Modifiez-le dans `config/init.php` :
+
+```php
+date_default_timezone_set('Europe/Paris');
 ```
 
 ## Structure
