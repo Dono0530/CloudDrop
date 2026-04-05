@@ -66,7 +66,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'creat
         <div class="d-flex align-items-center gap-2">
             <a href="/php/dashboard.php" class="nav-link"><i class="bi bi-speedometer2"></i> Dashboard</a>
             <a href="/php/upload.php" class="nav-link"><i class="bi bi-cloud-arrow-up"></i> Upload</a>
-            <a href="/auth/logout.php" class="nav-link nav-link-cta"><i class="bi bi-box-arrow-right"></i></a>
+            <a href="/php/download.php" class="nav-link active"><i class="bi bi-folder2-open"></i> Fichiers</a>
+            <a href="/php/profile.php" class="nav-link"><i class="bi bi-person"></i> Profil</a>
+            <?php if ($_SESSION['user_role'] === 'admin'): ?>
+                <a href="/admin/index.php" class="nav-link"><i class="bi bi-shield-lock"></i> Admin</a>
+            <?php endif; ?>
+            <a href="/auth/logout.php" class="nav-link nav-link-cta"><i class="bi bi-box-arrow-right"></i> Déconnexion</a>
             <button class="theme-toggle" onclick="toggleTheme()"></button>
         </div>
     </div>
@@ -100,13 +105,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'creat
     </div>
     <?php endif; ?>
 
-    <!-- Breadcrumb + actions -->
-    <div class="d-flex justify-content-between align-items-center mb-4 fade-in fade-in-delay-1">
-        <div>
-            <?php if ($currentFolder): ?>
-                <a href="/php/download.php" class="btn-modern btn-ghost btn-sm"><i class="bi bi-arrow-left"></i> Retour</a>
-            <?php endif; ?>
-        </div>
+    <!-- Actions -->
+    <div class="d-flex justify-content-end mb-4 fade-in fade-in-delay-1">
         <button class="btn-modern btn-outline-modern btn-sm" data-bs-toggle="modal" data-bs-target="#newFolderModal">
             <i class="bi bi-folder-plus"></i> Nouveau dossier
         </button>
@@ -186,6 +186,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'creat
                                         <a href="/php/preview.php?id=<?= $file['id'] ?>" class="btn-modern btn-outline-modern btn-sm" title="Aperçu"><i class="bi bi-eye"></i></a>
                                         <?php endif; ?>
                                         <a href="/php/download_file.php?id=<?= $file['id'] ?>" class="btn-modern btn-primary-modern btn-sm" title="Télécharger"><i class="bi bi-download"></i></a>
+                                        <button class="btn-modern btn-outline-modern btn-sm" title="Partager"
+                                            onclick="shareFile(<?= $file['id'] ?>, '<?= htmlspecialchars(addslashes($file['original_name'])) ?>')">
+                                            <i class="bi bi-share"></i>
+                                        </button>
                                         <button class="btn-modern btn-outline-modern btn-sm" title="Déplacer"
                                             onclick="openMoveModal(<?= $file['id'] ?>, '<?= htmlspecialchars(addslashes($file['original_name'])) ?>')">
                                             <i class="bi bi-folder-symlink"></i>
@@ -286,6 +290,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'creat
     </div>
 </div>
 
+<!-- Modal Partage -->
+<div class="modal fade" id="shareModal" tabindex="-1">
+    <div class="modal-dialog modal-modern">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-share"></i> Partager le fichier</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p id="shareFileName" style="font-weight:500;"></p>
+                <div class="form-group-modern">
+                    <label>Durée de validité</label>
+                    <select id="shareExpiry" class="form-control-modern">
+                        <option value="1">1 heure</option>
+                        <option value="24" selected>24 heures</option>
+                        <option value="168">7 jours</option>
+                        <option value="720">30 jours</option>
+                    </select>
+                </div>
+                <div id="shareResult" style="display:none;">
+                    <label style="font-size:0.85rem;font-weight:500;margin-bottom:0.3rem;display:block;">Lien de partage</label>
+                    <div class="input-group">
+                        <input type="text" id="shareLink" class="form-control-modern" readonly style="font-size:0.8rem;">
+                        <button class="btn-modern btn-primary-modern btn-sm" onclick="copyShareLink()"><i class="bi bi-clipboard"></i></button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-modern btn-ghost" data-bs-dismiss="modal">Fermer</button>
+                <button type="button" class="btn-modern btn-primary-modern" id="shareBtn" onclick="createShare()"><i class="bi bi-link-45deg"></i> Générer le lien</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="/js/theme.js"></script>
 <script>
@@ -293,6 +332,40 @@ function openMoveModal(fileId, fileName) {
     document.getElementById('moveFileId').value = fileId;
     document.getElementById('moveFileName').textContent = fileName;
     new bootstrap.Modal(document.getElementById('moveModal')).show();
+}
+
+let shareFileId = 0;
+function shareFile(id, name) {
+    shareFileId = id;
+    document.getElementById('shareFileName').textContent = name;
+    document.getElementById('shareResult').style.display = 'none';
+    document.getElementById('shareBtn').disabled = false;
+    new bootstrap.Modal(document.getElementById('shareModal')).show();
+}
+async function createShare() {
+    const btn = document.getElementById('shareBtn');
+    btn.disabled = true;
+    const fd = new FormData();
+    fd.append('action', 'create_share');
+    fd.append('file_id', shareFileId);
+    fd.append('expiry_hours', document.getElementById('shareExpiry').value);
+    fd.append('_csrf_token', '<?= $_SESSION[CSRF_TOKEN_NAME] ?? '' ?>');
+    const res = await fetch('/php/actions.php', { method: 'POST', body: fd });
+    const data = await res.json();
+    if (data.success) {
+        document.getElementById('shareLink').value = data.url;
+        document.getElementById('shareResult').style.display = 'block';
+        showToast('Lien de partage créé', 'success');
+    } else {
+        showToast(data.error || 'Erreur', 'error');
+    }
+    btn.disabled = false;
+}
+function copyShareLink() {
+    const input = document.getElementById('shareLink');
+    input.select();
+    navigator.clipboard.writeText(input.value);
+    showToast('Lien copié !', 'success');
 }
 </script>
 </body>

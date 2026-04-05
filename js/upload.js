@@ -1,15 +1,15 @@
 // ═══════════════════════════════════════════════════════════════
-// UPLOAD ENGINE PRO - Chunked Upload avec queue parallèle
+// UPLOAD ENGINE PRO - Chunked Upload binaire pur (pas FormData)
+// Les métadonnées passent dans les headers HTTP → zéro surcharge
 // ═══════════════════════════════════════════════════════════════
 
 const CHUNK_SIZE   = 10 * 1024 * 1024; // 10 Mo
 const MAX_FILE     = 100 * 1024 * 1024 * 1024; // 100 Go
-const CONCURRENT   = 2; // fichiers uploadés en parallèle
+const CONCURRENT   = 2;
 const MAX_RETRIES  = 3;
 const ENDPOINT     = '/admin/upload_chunk.php';
 const BLOCKED_EXT  = ['php','phtml','php3','php4','php5','php7','phar','exe','bat','cmd','sh','bash','com','msi','scr','vbs','wsf','ps1'];
 
-// ── Helpers ───────────────────────────────────────────────────
 function fmtBytes(b) {
     if (b === 0) return '0 o';
     const u = ['o','Ko','Mo','Go','To'];
@@ -55,7 +55,7 @@ function fileIcon(ext) {
 
 function escapeHtml(t) { const d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
 
-// ── UploadItem (un fichier) ──────────────────────────────────
+// ── UploadItem ────────────────────────────────────────────────
 class UploadItem {
     constructor(file, index, folderId) {
         this.file = file;
@@ -81,14 +81,12 @@ class UploadItem {
         while (chunk < this.totalChunks && this.status === 'uploading') {
             const result = await this._sendChunk(chunk);
             if (!result.ok) {
-                // Erreur serveur définitive (pas de retry sur les erreurs logiques)
                 if (result.fatal) {
                     this.status = 'error';
                     this.error = result.error;
                     onProgress(this);
                     return;
                 }
-                // Erreur réseau → retry
                 if (this.retries < MAX_RETRIES) {
                     this.retries++;
                     await new Promise(r => setTimeout(r, 1000 * this.retries));
@@ -119,18 +117,25 @@ class UploadItem {
     async _sendChunk(index) {
         const start = index * CHUNK_SIZE;
         const end   = Math.min(start + CHUNK_SIZE, this.file.size);
-        const chunk = this.file.slice(start, end);
+        const chunkData = this.file.slice(start, end);
 
-        const fd = new FormData();
-        fd.append('chunk', chunk);
-        fd.append('chunkIndex', index);
-        fd.append('totalChunks', this.totalChunks);
-        fd.append('fileName', this.file.name);
-        fd.append('fileId', this.id);
-        fd.append('folder_id', this.folderId);
+        // Envoi binaire pur avec métadonnées dans les headers
+        const headers = {
+            'X-Chunk-Index': index,
+            'X-Total-Chunks': this.totalChunks,
+            'X-File-Name': encodeURIComponent(this.file.name),
+            'X-File-Id': this.id,
+            'X-Folder-Id': this.folderId,
+            'X-File-Size': this.file.size,
+            'Content-Type': 'application/octet-stream',
+        };
 
         try {
-            const res = await fetch(ENDPOINT, { method: 'POST', body: fd });
+            const res = await fetch(ENDPOINT, {
+                method: 'POST',
+                body: chunkData,
+                headers: headers,
+            });
 
             if (!res.ok) {
                 let msg = 'Erreur serveur (' + res.status + ')';
@@ -203,6 +208,9 @@ class UploadQueue {
             item.retries = 0;
         }
         await this._runNext();
+        while (this.running > 0) {
+            await new Promise(r => setTimeout(r, 100));
+        }
     }
 
     async _runNext() {
@@ -211,6 +219,9 @@ class UploadQueue {
             if (!next) break;
             this.running++;
             next.upload((item) => this.onUpdate && this.onUpdate(this)).then(() => {
+                this.running--;
+                this._runNext();
+            }).catch(() => {
                 this.running--;
                 this._runNext();
             });
@@ -254,7 +265,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const queue = new UploadQueue();
     let isUploading = false;
 
-    // ── Drag & Drop ──────────────────────────────────────────
     ['dragenter','dragover'].forEach(e => dropZone.addEventListener(e, ev => {
         ev.preventDefault(); dropZone.classList.add('dragover');
     }));
@@ -269,7 +279,6 @@ document.addEventListener('DOMContentLoaded', () => {
         render();
     }
 
-    // ── Render queue ─────────────────────────────────────────
     function render() {
         if (queue.items.length === 0) {
             fileQueue.innerHTML = '';
@@ -326,11 +335,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     window._removeFile = function(i) { queue.remove(i); render(); };
 
-    // ── Upload ───────────────────────────────────────────────
     uploadBtn.addEventListener('click', async () => {
         if (queue.items.length === 0) return;
 
-        // Lire le dossier sélectionné avant de commencer
         const folderEl = document.getElementById('folderSelect');
         const folderId = folderEl ? parseInt(folderEl.value) || 0 : 0;
         queue.items.forEach(item => { item.folderId = folderId; });
@@ -353,7 +360,6 @@ document.addEventListener('DOMContentLoaded', () => {
             render();
         });
 
-        // Fini
         const g = queue.globalProgress;
         isUploading = false;
         cancelBtn.style.display = 'none';
@@ -368,6 +374,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if (g.errors > 0) showToast(`${g.errors} fichier(s) en erreur`, 'error');
 
         render();
+
+        if (g.done > 0) {
+            setTimeout(() => {
+                window.location.href = '/php/download.php' + (folderId > 0 ? '?folder=' + folderId : '');
+            }, 1500);
+        }
     });
 
     cancelBtn.addEventListener('click', () => {

@@ -71,7 +71,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <a href="/php/dashboard.php" class="nav-link"><i class="bi bi-speedometer2"></i> Dashboard</a>
             <a href="/php/upload.php" class="nav-link"><i class="bi bi-cloud-arrow-up"></i> Upload</a>
             <a href="/php/download.php" class="nav-link"><i class="bi bi-folder2-open"></i> Fichiers</a>
-            <a href="/auth/logout.php" class="nav-link nav-link-cta"><i class="bi bi-box-arrow-right"></i></a>
+            <a href="/php/profile.php" class="nav-link active"><i class="bi bi-person"></i> Profil</a>
+            <?php if ($_SESSION['user_role'] === 'admin'): ?>
+                <a href="/admin/index.php" class="nav-link"><i class="bi bi-shield-lock"></i> Admin</a>
+            <?php endif; ?>
+            <a href="/auth/logout.php" class="nav-link nav-link-cta"><i class="bi bi-box-arrow-right"></i> Déconnexion</a>
             <button class="theme-toggle" onclick="toggleTheme()"></button>
         </div>
     </div>

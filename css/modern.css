@@ -430,6 +430,12 @@ select.form-control-modern {
     display: block;
     color: var(--primary);
     transition: var(--transition);
+    pointer-events: none;
+}
+
+.upload-zone .upload-text,
+.upload-zone .upload-hint {
+    pointer-events: none;
 }
 
 .upload-zone:hover .upload-icon-bi,
@@ -709,6 +715,10 @@ select.form-control-modern {
     cursor: pointer;
     position: relative;
     transition: var(--transition);
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .theme-toggle::after {
@@ -722,6 +732,19 @@ select.form-control-modern {
     background: #fff;
     box-shadow: 0 1px 3px rgba(0,0,0,0.2);
     transition: var(--transition);
+    z-index: 1;
+}
+
+.theme-toggle i {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 0.85rem;
+    color: #0f172a;
+    z-index: 2;
+    pointer-events: none;
+    line-height: 1;
 }
 
 [data-theme="dark"] .theme-toggle {
@@ -730,6 +753,10 @@ select.form-control-modern {
 
 [data-theme="dark"] .theme-toggle::after {
     left: 23px;
+}
+
+[data-theme="dark"] .theme-toggle i {
+    color: #fbbf24;
 }
 
 /* ── PAGE HEADER ────────────────────────────────────────────── */
