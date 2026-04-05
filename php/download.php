@@ -194,16 +194,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'creat
                                     <div class="d-flex gap-1">
                                         <?php if ($fm->isPreviewable($file['file_extension'])): ?>
                                         <a href="/php/preview.php?id=<?= $file['id'] ?>" class="btn-modern btn-outline-modern btn-sm" title="Aperçu"><i class="bi bi-eye"></i></a>
+                                        <?php else: ?>
+                                        <span class="btn-modern btn-outline-modern btn-sm" style="visibility:hidden;pointer-events:none;" title="Aperçu non disponible"><i class="bi bi-eye"></i></span>
                                         <?php endif; ?>
                                         <a href="/php/download_file.php?id=<?= $file['id'] ?>" class="btn-modern btn-primary-modern btn-sm" title="Télécharger"><i class="bi bi-download"></i></a>
                                         <button class="btn-modern btn-outline-modern btn-sm" title="Partager"
                                             onclick="shareFile(<?= $file['id'] ?>, '<?= htmlspecialchars(addslashes($file['original_name'])) ?>')">
                                             <i class="bi bi-share"></i>
                                         </button>
+                                        <?php if ((int)$file['user_id'] === $_SESSION['user_id'] || Auth::isAdmin()): ?>
                                         <button class="btn-modern btn-outline-modern btn-sm" title="Déplacer"
                                             onclick="openMoveModal(<?= $file['id'] ?>, '<?= htmlspecialchars(addslashes($file['original_name'])) ?>')">
                                             <i class="bi bi-folder-symlink"></i>
                                         </button>
+                                        <?php endif; ?>
                                     </div>
                                 </td>
                             </tr>
