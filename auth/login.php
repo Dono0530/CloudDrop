@@ -13,6 +13,8 @@ $success = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!Auth::validateCsrf($_POST[CSRF_TOKEN_NAME] ?? '')) {
         $error = 'Jeton de sécurité invalide. Rechargez la page.';
+    } elseif (defined('TURNSTILE_ENABLED') && TURNSTILE_ENABLED && !Auth::verifyTurnstile($_POST['cf-turnstile-response'] ?? '')) {
+        $error = 'Vérification anti-robot échouée. Veuillez réessayer.';
     } else {
         $username = trim($_POST['username'] ?? '');
         $password = $_POST['password'] ?? '';
@@ -77,6 +79,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <button type="submit" class="btn-modern btn-primary-modern btn-lg w-100" style="justify-content:center;">
                     <i class="bi bi-box-arrow-in-right"></i> Se connecter
                 </button>
+
+                <?php if (defined('TURNSTILE_ENABLED') && TURNSTILE_ENABLED): ?>
+                <div class="turnstile-container" style="margin-top:1rem;display:flex;justify-content:center;">
+                    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+                    <div class="cf-turnstile" data-sitekey="<?= TURNSTILE_SITE_KEY ?>"></div>
+                </div>
+                <?php endif; ?>
             </form>
 
             <p style="text-align:center; margin-top:1.25rem; font-size:0.9rem; color:var(--text-muted);">

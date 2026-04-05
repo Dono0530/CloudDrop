@@ -1305,3 +1305,138 @@ select.form-control-modern {
 .strength-fair { width: 50%; background: var(--warning); }
 .strength-good { width: 75%; background: var(--accent); }
 .strength-strong { width: 100%; background: var(--success); }
+
+/* ── SHARE PAGE ─────────────────────────────────────────────── */
+.share-page {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1rem;
+}
+
+.share-card {
+    width: 100%;
+    max-width: 520px;
+}
+
+.share-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.share-header .share-logo {
+    font-size: 2.5rem;
+    margin-bottom: 0.75rem;
+    display: block;
+    color: var(--primary);
+}
+
+.share-header h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 0;
+}
+
+.share-expired {
+    text-align: center;
+    padding: 2rem 1rem;
+}
+
+.share-expired h2 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 1rem 0 0.5rem;
+}
+
+.share-expired p {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+.share-file-info {
+    text-align: center;
+    padding: 1.5rem 0;
+}
+
+.share-file-icon {
+    font-size: 3.5rem;
+    margin-bottom: 1rem;
+}
+
+.share-filename {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+    word-break: break-word;
+}
+
+.share-file-meta {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 1rem;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.share-file-meta i {
+    margin-right: 0.25rem;
+}
+
+.share-expiry-badge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    background: var(--primary-bg);
+    border-radius: var(--radius-sm);
+    font-size: 0.85rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.share-expiry-badge i {
+    color: var(--primary);
+}
+
+.share-expiry-badge .countdown {
+    font-weight: 600;
+    color: var(--primary);
+}
+
+.share-expiry-badge .countdown.urgent {
+    color: var(--danger);
+}
+
+.share-expiry-badge .countdown.expired {
+    color: var(--text-muted);
+}
+
+.share-download-btn {
+    justify-content: center;
+    margin-bottom: 1.5rem;
+}
+
+.share-footer {
+    text-align: center;
+    margin-top: 1rem;
+}
+
+.share-footer p {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin: 0;
+}
+
+/* ── TURNSTILE ──────────────────────────────────────────────── */
+.turnstile-container {
+    display: flex;
+    justify-content: center;
+}
+
+.turnstile-container .cf-turnstile {
+    transform: scale(0.95);
+    transform-origin: center;
+}

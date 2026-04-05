@@ -14,6 +14,11 @@ define('DB_PASS', '');
 define('DB_NAME', 'clouddrop');
 define('DB_CHARSET', 'utf8mb4');
 
+// ── CLOUDFLARE TURNSTILE ───────────────────────────────────────
+define('TURNSTILE_ENABLED', true);
+define('TURNSTILE_SITE_KEY', 'public_key');
+define('TURNSTILE_SECRET_KEY', 'private_key');
+
 // ── SESSION ──────────────────────────────────────────────────────
 define('SESSION_NAME', 'CLOUDDROP_SESSION');
 define('SESSION_LIFETIME', 7200);
@@ -48,3 +53,4 @@ define('DANGEROUS_EXTENSIONS', [
 ]);
 
 define('IMAGE_EXTENSIONS', ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'svg', 'webp']);
+

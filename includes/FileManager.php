@@ -175,6 +175,18 @@ class FileManager {
         return $share;
     }
 
+    public function getShareByTokenForDisplay(string $token): ?array {
+        $share = $this->db->fetchOne(
+            "SELECT s.*, f.original_name, f.filename, f.file_extension, f.file_size, u.pseudo as owner_name, s.expires_at
+             FROM shares s
+             JOIN files f ON s.file_id = f.id AND f.deleted_at IS NULL
+             JOIN users u ON s.user_id = u.id
+             WHERE s.token = ?",
+            [$token]
+        );
+        return $share;
+    }
+
     public function getFileShares(int $fileId): array {
         return $this->db->fetchAll("SELECT * FROM shares WHERE file_id = ? ORDER BY created_at DESC", [$fileId]);
     }

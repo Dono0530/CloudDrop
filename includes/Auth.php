@@ -203,4 +203,24 @@ class Auth {
         );
         return max(0, LOGIN_MAX_ATTEMPTS - ($result['attempts'] ?? 0));
     }
+
+    public static function verifyTurnstile(string $token): bool {
+        if (empty($token)) return false;
+        $data = http_build_query([
+            'secret' => TURNSTILE_SECRET_KEY,
+            'response' => $token,
+        ]);
+        $context = stream_context_create([
+            'http' => [
+                'method' => 'POST',
+                'header' => "Content-Type: application/x-www-form-urlencoded\r\nContent-Length: " . strlen($data) . "\r\n",
+                'content' => $data,
+                'timeout' => 10,
+            ],
+        ]);
+        $response = @file_get_contents('https://challenges.cloudflare.com/turnstile/v0/siteverify', false, $context);
+        if ($response === false) return false;
+        $body = json_decode($response, true);
+        return !empty($body['success']);
+    }
 }

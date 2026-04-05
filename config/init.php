@@ -4,6 +4,9 @@
  * Configure sessions, sécurité, et autoload
  */
 
+// ── FUSEAU HORAIRE FRANCE ──────────────────────────────────────
+date_default_timezone_set('Europe/Paris');
+
 // Charger la config
 require_once __DIR__ . '/config.php';
 

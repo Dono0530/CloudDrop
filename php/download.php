@@ -91,15 +91,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'creat
         </div>
         <div class="d-flex flex-wrap gap-3">
             <?php foreach ($folders as $folder): ?>
-            <a href="?folder=<?= $folder['id'] ?>" class="card-modern" style="padding:1rem 1.5rem;text-decoration:none;color:var(--text);min-width:160px;">
+            <div class="card-modern" style="padding:1rem 1.5rem;min-width:160px;">
                 <div class="d-flex align-items-center gap-2">
-                    <i class="bi bi-folder-fill" style="color:var(--warning);font-size:1.5rem;"></i>
-                    <div>
-                        <div style="font-weight:500;font-size:0.9rem;"><?= htmlspecialchars($folder['name']) ?></div>
-                        <div style="font-size:0.75rem;color:var(--text-muted);"><?= $folder['file_count'] ?> fichier(s)</div>
-                    </div>
+                    <a href="?folder=<?= $folder['id'] ?>" style="text-decoration:none;color:var(--text);display:flex;align-items:center;gap:0.5rem;flex:1;">
+                        <i class="bi bi-folder-fill" style="color:var(--warning);font-size:1.5rem;"></i>
+                        <div>
+                            <div style="font-weight:500;font-size:0.9rem;"><?= htmlspecialchars($folder['name']) ?></div>
+                            <div style="font-size:0.75rem;color:var(--text-muted);"><?= $folder['file_count'] ?> fichier(s)</div>
+                        </div>
+                    </a>
+                    <form method="POST" action="/php/actions.php" onsubmit="return confirm('Supprimer ce dossier ? Les fichiers seront déplacés à la racine.');" style="display:inline;">
+                        <?= Auth::csrfField() ?>
+                        <input type="hidden" name="action" value="delete_folder">
+                        <input type="hidden" name="folder_id" value="<?= $folder['id'] ?>">
+                        <button type="submit" class="btn-modern btn-ghost btn-sm" title="Supprimer" style="padding:0.25rem 0.4rem;">
+                            <i class="bi bi-trash3" style="color:var(--danger);font-size:0.85rem;"></i>
+                        </button>
+                    </form>
                 </div>
-            </a>
+            </div>
             <?php endforeach; ?>
         </div>
     </div>
