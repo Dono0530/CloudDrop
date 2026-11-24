@@ -97,6 +97,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </div>
 
 <script src="/js/theme.js"></script>
+<?php require __DIR__ . '/../includes/SiteFooter.php'; ?>
 </body>
 </html>
 
