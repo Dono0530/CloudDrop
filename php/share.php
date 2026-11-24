@@ -114,5 +114,6 @@ document.querySelectorAll('.countdown').forEach(function(el) {
     setInterval(update, 1000);
 });
 </script>
+<?php require __DIR__ . '/../includes/SiteFooter.php'; ?>
 </body>
 </html>
