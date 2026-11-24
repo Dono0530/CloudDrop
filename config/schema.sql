@@ -52,10 +52,23 @@ CREATE TABLE IF NOT EXISTS shares (
     file_id INT NOT NULL,
     user_id INT NOT NULL,
     expires_at DATETIME NOT NULL,
+    password_hash VARCHAR(255) DEFAULT NULL,
+    download_limit INT UNSIGNED DEFAULT NULL,
+    download_count INT UNSIGNED NOT NULL DEFAULT 0,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     INDEX idx_token (token),
     INDEX idx_file_id (file_id),
     INDEX idx_expires (expires_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Historique des téléchargements via liens de partage
+CREATE TABLE IF NOT EXISTS share_access_log (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    share_id INT NOT NULL,
+    accessed_at DATETIME NOT NULL,
+    ip_address VARCHAR(45) NOT NULL DEFAULT '',
+    user_agent VARCHAR(255) NOT NULL DEFAULT '',
+    INDEX idx_share_access_time (share_id, accessed_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Table des tentatives de connexion
