@@ -9,6 +9,8 @@ if (Auth::isLoggedIn()) {
 
 $error = '';
 $success = '';
+$banNotice = (string)($_SESSION['ban_notice'] ?? '');
+unset($_SESSION['ban_notice']);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!Auth::validateCsrf($_POST[CSRF_TOKEN_NAME] ?? '')) {
@@ -47,6 +49,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <h1>CloudDrop</h1>
                 <p>Connectez-vous pour accéder à vos fichiers</p>
             </div>
+
+            <?php if ($banNotice): ?>
+                <div class="alert-modern alert-danger-modern">
+                    <i class="bi bi-person-slash"></i> <?= htmlspecialchars($banNotice, ENT_QUOTES, 'UTF-8') ?>
+                </div>
+            <?php endif; ?>
 
             <?php if ($error): ?>
                 <div class="alert-modern alert-danger-modern">
