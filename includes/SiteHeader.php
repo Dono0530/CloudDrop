@@ -25,7 +25,7 @@ $siteHeaderLoggedIn = Auth::isLoggedIn();
 $siteHeaderIsAdmin = Auth::isAdmin();
 ?>
 <nav class="navbar-drive" aria-label="Navigation principale">
-    <div class="container-fluid px-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <div class="container-fluid px-4 d-flex align-items-center flex-wrap gap-2">
         <a class="navbar-brand" href="/index.php"><i class="bi bi-cloud-fill"></i> CloudDrop</a>
         <div class="site-nav-links d-flex align-items-center gap-1">
             <a href="/index.php" class="nav-link<?= $siteHeaderActive('home') ?>"><i class="bi bi-house"></i> Accueil</a>
