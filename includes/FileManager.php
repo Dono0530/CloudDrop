@@ -227,7 +227,9 @@ class FileManager {
 
     public static function getPreviewType(string $ext): string {
         $ext = strtolower($ext);
-        if (in_array($ext, ['jpg','jpeg','png','gif','bmp','svg','webp'])) return 'image';
+        // Le SVG est présenté en texte pour éviter l'exécution de scripts lors d'un aperçu.
+        if ($ext === 'svg') return 'text';
+        if (in_array($ext, ['jpg','jpeg','png','gif','bmp','webp'])) return 'image';
         if (in_array($ext, ['mp4','webm','ogg'])) return 'video';
         if (in_array($ext, ['mp3','wav'])) return 'audio';
         if ($ext === 'pdf') return 'pdf';
