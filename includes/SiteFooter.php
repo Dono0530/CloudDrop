@@ -2,7 +2,6 @@
 /**
  * Pied de page commun CloudDrop.
  */
-require_once __DIR__ . '/Auth.php';
 ?>
 <footer class="site-footer">
     <nav class="site-footer-links" aria-label="Liens de pied de page">
