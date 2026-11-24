@@ -45,8 +45,7 @@ class Auth {
     public static function requireAdmin(): void {
         self::requireLogin();
         if (!self::isAdmin()) {
-            http_response_code(403);
-            die('Accès interdit');
+            render_error_page(403);
         }
     }
 
