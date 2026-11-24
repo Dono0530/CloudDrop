@@ -51,6 +51,23 @@ switch ($action) {
         } catch (Exception $e) { $_SESSION['flash_error'] = $e->getMessage(); }
         header('Location: ' . $redirect); exit;
 
+    case 'set_file_visibility':
+        try {
+            $visibility = $_POST['is_public'] ?? null;
+            if (!in_array($visibility, ['0', '1'], true)) {
+                throw new Exception('Visibilité invalide');
+            }
+            $isPublic = $visibility === '1';
+            $fm->setFileVisibility(
+                (int)($_POST['file_id'] ?? 0),
+                $isPublic,
+                (int)$_SESSION['user_id'],
+                Auth::isAdmin()
+            );
+            $_SESSION['flash_success'] = $isPublic ? 'Fichier rendu public.' : 'Fichier rendu privé.';
+        } catch (Exception $e) { $_SESSION['flash_error'] = $e->getMessage(); }
+        header('Location: ' . $redirect); exit;
+
     case 'rename_file':
         try {
             $fm->renameFile((int)($_POST['file_id'] ?? 0), $_POST['new_name'] ?? '', $_SESSION['user_id']);

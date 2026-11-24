@@ -122,6 +122,46 @@ class FileManager {
             || ($userId !== null && (int)$file['user_id'] === $userId);
     }
 
+    public function removeUserFilesFromDisk(int $userId): int {
+        if ($userId <= 0) throw new Exception('Utilisateur invalide');
+
+        $files = $this->db->fetchAll("SELECT filename FROM files WHERE user_id = ?", [$userId]);
+        if (empty($files)) return 0;
+
+        if (!is_dir(UPLOAD_DIR)) return 0;
+        $uploadDirectory = realpath(UPLOAD_DIR);
+        if ($uploadDirectory === false) throw new Exception('Dossier de stockage inaccessible');
+
+        $removed = 0;
+        foreach ($files as $file) {
+            $filename = basename((string)($file['filename'] ?? ''));
+            if ($filename === '' || $filename === '.' || $filename === '..') {
+                throw new Exception('Nom de fichier invalide dans le stockage');
+            }
+
+            $path = $uploadDirectory . DIRECTORY_SEPARATOR . $filename;
+            if (is_link($path) || is_file($path)) {
+                if (!unlink($path)) {
+                    throw new Exception('Impossible de supprimer un fichier du stockage');
+                }
+                $removed++;
+            } elseif (file_exists($path)) {
+                throw new Exception('Un élément inattendu bloque le nettoyage du stockage');
+            }
+        }
+
+        return $removed;
+    }
+
+    public function setFileVisibility(int $fileId, bool $isPublic, int $userId, bool $isAdmin = false): bool {
+        $file = $this->getFileById($fileId);
+        if (!$file) throw new Exception('Fichier introuvable');
+        if ((int)$file['user_id'] !== $userId && !$isAdmin) throw new Exception('Permission refusée');
+
+        $this->db->execute("UPDATE files SET is_public = ? WHERE id = ?", [$isPublic ? 1 : 0, $fileId]);
+        return true;
+    }
+
     public function deleteFile(int $fileId, int $userId, bool $isAdmin = false): bool {
         $file = $this->getFileById($fileId);
         if (!$file) throw new Exception('Fichier introuvable');

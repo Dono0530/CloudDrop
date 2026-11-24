@@ -135,6 +135,15 @@ if ($search) {
                                                 <a href="/php/preview.php?id=<?= $file['id'] ?>" class="btn-modern btn-outline-modern btn-sm" title="Aperçu"><i class="bi bi-eye"></i></a>
                                                 <?php endif; ?>
                                                 <a href="/php/download_file.php?id=<?= $file['id'] ?>" class="btn-modern btn-outline-modern btn-sm" title="Télécharger"><i class="bi bi-download"></i></a>
+                                                <form method="POST" action="/php/actions.php" style="display:inline;">
+                                                    <?= Auth::csrfField() ?>
+                                                    <input type="hidden" name="action" value="set_file_visibility">
+                                                    <input type="hidden" name="file_id" value="<?= $file['id'] ?>">
+                                                    <input type="hidden" name="is_public" value="<?= !empty($file['is_public']) ? '0' : '1' ?>">
+                                                    <button type="submit" class="btn-modern btn-outline-modern btn-sm" title="<?= !empty($file['is_public']) ? 'Rendre privé' : 'Rendre public' ?>">
+                                                        <i class="bi <?= !empty($file['is_public']) ? 'bi-lock-fill' : 'bi-globe2' ?>"></i>
+                                                    </button>
+                                                </form>
                                                 <button class="btn-modern btn-outline-modern btn-sm" title="Partager" onclick="shareFile(<?= $file['id'] ?>, '<?= htmlspecialchars(addslashes($file['original_name'])) ?>')"><i class="bi bi-share"></i></button>
                                                 <form method="POST" action="/php/actions.php" onsubmit="return confirm('Supprimer ce fichier ?');" style="display:inline;">
                                                     <?= Auth::csrfField() ?>

@@ -20,6 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if ($uid === (int)$_SESSION['user_id']) { $flashError = 'Impossible de supprimer votre propre compte.'; }
                 else {
                     $db = Database::getInstance();
+                    $fm->removeUserFilesFromDisk($uid);
                     $db->execute("UPDATE files SET deleted_at = NOW(), deleted_by = ? WHERE user_id = ? AND deleted_at IS NULL", [$_SESSION['user_id'], $uid]);
                     $db->execute("DELETE FROM users WHERE id = ?", [$uid]);
                     $flashSuccess = 'Utilisateur supprimé.';
