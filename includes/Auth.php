@@ -123,8 +123,13 @@ class Auth {
         if (!preg_match('/^[a-zA-Z0-9_-]+$/', $username)) {
             return ['success' => false, 'error' => 'Caractères autorisés : lettres, chiffres, tirets et underscores'];
         }
-        if (strlen($password) < 8) {
-            return ['success' => false, 'error' => 'Le mot de passe doit faire au moins 8 caractères'];
+        $passwordLength = function_exists('mb_strlen') ? mb_strlen($password, 'UTF-8') : strlen($password);
+        if ($passwordLength < 12) {
+            return ['success' => false, 'error' => 'Le mot de passe doit faire au moins 12 caractères'];
+        }
+        // PASSWORD_DEFAULT utilise bcrypt sur les versions PHP actuelles ; éviter sa limite silencieuse de 72 octets.
+        if (strlen($password) > 72) {
+            return ['success' => false, 'error' => 'Le mot de passe ne peut pas dépasser 72 octets'];
         }
         if ($password !== $confirmPassword) {
             return ['success' => false, 'error' => 'Les mots de passe ne correspondent pas'];
