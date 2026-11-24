@@ -77,10 +77,13 @@ $files = $fm->getFiles(['limit' => 100]);
 $globalStats = $fm->getGlobalStats();
 $activity = $fm->getRecentActivity(30);
 $db = Database::getInstance();
-$users = $db->fetchAll("SELECT u.*, COUNT(f.id) as file_count, COALESCE(SUM(f.file_size), 0) as total_size FROM users u LEFT JOIN files f ON u.id = f.user_id AND f.deleted_at IS NULL GROUP BY u.id ORDER BY u.id");
+$users = $db->fetchAll("SELECT u.*, COUNT(f.id) as file_count, COALESCE(SUM(f.file_size), 0) as total_size,
+    CASE WHEN u.banned_until IS NULL THEN NULL ELSE GREATEST(TIMESTAMPDIFF(SECOND, NOW(), u.banned_until), 0) END AS ban_seconds_remaining,
+    CASE WHEN u.banned_until IS NULL THEN NULL ELSE DATE_FORMAT(u.banned_until, '%d/%m/%Y à %H:%i') END AS ban_until_display
+    FROM users u LEFT JOIN files f ON u.id = f.user_id AND f.deleted_at IS NULL GROUP BY u.id ORDER BY u.id");
 $activeBans = array_values(array_filter($users, static function (array $u): bool {
     return $u['role'] === 'user' && !empty($u['is_banned'])
-        && (empty($u['banned_until']) || strtotime($u['banned_until']) > time());
+        && (empty($u['banned_until']) || (int)($u['ban_seconds_remaining'] ?? 0) > 0);
 }));
 $tab = $_GET['tab'] ?? 'files';
 $controls = $siteControl->settings();
@@ -218,11 +221,11 @@ $controls = $siteControl->settings();
                         <tr>
                             <td><div class="d-flex align-items-center gap-2"><div class="avatar"><?= strtoupper(substr($u['pseudo'], 0, 1)) ?></div><div><div style="font-weight:500;"><?= htmlspecialchars($u['pseudo']) ?></div><div style="font-size:0.75rem;color:var(--text-muted);">ID: <?= $u['id'] ?></div></div></div></td>
                             <td><span class="badge-modern <?= $u['role'] === 'admin' ? 'badge-danger' : 'badge-primary' ?>"><?= htmlspecialchars($u['role']) ?></span></td>
-                            <?php $userBanned = $u['role'] === 'user' && !empty($u['is_banned']) && (empty($u['banned_until']) || strtotime($u['banned_until']) > time()); ?>
+                            <?php $userBanned = $u['role'] === 'user' && !empty($u['is_banned']) && (empty($u['banned_until']) || (int)($u['ban_seconds_remaining'] ?? 0) > 0); ?>
                             <td>
                                 <?php if ($userBanned): ?>
                                     <span class="badge-modern badge-danger"><?= empty($u['banned_until']) ? 'Banni définitivement' : 'Banni temporairement' ?></span>
-                                    <div style="font-size:.8rem;color:var(--text-muted);"><?= htmlspecialchars(SiteControl::banTimeRemaining($u['banned_until'] ?? null), ENT_QUOTES, 'UTF-8') ?></div>
+                                    <div style="font-size:.8rem;color:var(--text-muted);"><?= htmlspecialchars(SiteControl::banTimeRemaining($u['banned_until'] ?? null, isset($u['ban_seconds_remaining']) ? (int)$u['ban_seconds_remaining'] : null, $u['ban_until_display'] ?? null), ENT_QUOTES, 'UTF-8') ?></div>
                                     <?php if (!empty($u['ban_reason'])): ?><div style="font-size:.75rem;color:var(--text-muted);">Motif : <?= htmlspecialchars($u['ban_reason'], ENT_QUOTES, 'UTF-8') ?></div><?php endif; ?>
                                 <?php else: ?><span class="badge-modern badge-success">Actif</span><?php endif; ?>
                             </td>
