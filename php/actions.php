@@ -92,10 +92,28 @@ switch ($action) {
         header('Content-Type: application/json');
         try {
             $share = $fm->createShare((int)($_POST['file_id'] ?? 0), $_SESSION['user_id'], (int)($_POST['expiry_hours'] ?? 24), Auth::isAdmin());
-            $url = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'] . '/php/share.php?token=' . $share['token'];
+            $url = '/php/share.php?token=' . rawurlencode($share['token']);
             echo json_encode(['success' => true, 'url' => $url, 'token' => $share['token'], 'expires_at' => $share['expires_at']]);
         } catch (Exception $e) { echo json_encode(['success' => false, 'error' => $e->getMessage()]); }
         exit;
+
+    case 'update_share_expiry':
+        try {
+            $fm->updateShareExpiry(
+                (int)($_POST['share_id'] ?? 0),
+                (int)$_SESSION['user_id'],
+                (int)($_POST['expiry_hours'] ?? 0)
+            );
+            $_SESSION['flash_success'] = 'Durée du lien mise à jour.';
+        } catch (Exception $e) { $_SESSION['flash_error'] = $e->getMessage(); }
+        header('Location: /php/shares.php'); exit;
+
+    case 'delete_share':
+        try {
+            $fm->deleteShare((int)($_POST['share_id'] ?? 0), (int)$_SESSION['user_id']);
+            $_SESSION['flash_success'] = 'Lien de partage supprimé.';
+        } catch (Exception $e) { $_SESSION['flash_error'] = $e->getMessage(); }
+        header('Location: /php/shares.php'); exit;
 
     case 'create_folder':
         try {
