@@ -167,6 +167,7 @@ class FileManager {
         if (!$file) throw new Exception('Fichier introuvable');
         if ((int)$file['user_id'] !== $userId && !$isAdmin) throw new Exception('Permission refusée');
         $uploadDirectory = realpath(UPLOAD_DIR);
+        $realPath = false;
         if ($uploadDirectory !== false) {
             $filename = basename((string)$file['filename']);
             if ($filename === '' || $filename === '.' || $filename === '..') {
