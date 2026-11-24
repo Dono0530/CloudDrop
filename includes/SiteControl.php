@@ -97,7 +97,31 @@ class SiteControl {
         return $message;
     }
 
+    private static function refreshSessionRole(): void {
+        if (empty($_SESSION['user_id'])) return;
+        try {
+            $user = Database::getInstance()->fetchOne(
+                'SELECT role FROM users WHERE id = ?',
+                [(int)$_SESSION['user_id']]
+            );
+        } catch (Throwable $e) {
+            // En cas d'indisponibilité de la base, ne jamais conserver un rôle administrateur en cache.
+            $_SESSION['user_role'] = 'user';
+            return;
+        }
+
+        if (!$user) {
+            foreach (['user_id', 'username', 'user_role', 'logged_in', 'login_time', 'last_regeneration'] as $key) {
+                unset($_SESSION[$key]);
+            }
+            if (session_status() === PHP_SESSION_ACTIVE) session_regenerate_id(true);
+            return;
+        }
+        $_SESSION['user_role'] = ($user['role'] ?? '') === 'admin' ? 'admin' : 'user';
+    }
+
     public static function enforceRequestPolicy(): void {
+        self::refreshSessionRole();
         $path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
         $isAdmin = ($_SESSION['user_role'] ?? '') === 'admin';
         if (!$isAdmin && !empty($_SESSION['user_id'])) {
