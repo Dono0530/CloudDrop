@@ -104,7 +104,7 @@ mysql -u UTILISATEUR -p NOM_BASE < config/migrate_share_security.sql
 
 - migrate_file_visibility.sql ajoute le choix public/privé.
 - migrate_share_security.sql ajoute les mots de passe, limites et journaux de partage.
-- Si migrate_share_security.sql avait déjà été exécutée avant l'ajout des aperçus, exécutez une fois config/migrate_share_preview_logs.sql pour ajouter le type d'événement aux journaux.
+- Si migrate_share_security.sql avait déjà été exécutée avant cette version, exécutez une fois config/migrate_share_preview_logs.sql et config/migrate_share_password_attempts.sql. La première ajoute le type d'événement aux journaux ; la seconde active la limitation des erreurs de mot de passe.
 - Une nouvelle installation importe schema.sql et n'exécute pas ces migrations ensuite.
 
 Une migration déjà appliquée peut échouer si elle est relancée. Vérifiez la structure de la base avant toute nouvelle tentative.
