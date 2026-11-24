@@ -21,11 +21,12 @@ function render_error_page(int $statusCode): void {
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="robots" content="noindex, nofollow">
         <title><?= $statusCode ?> · <?= htmlspecialchars($page['title'], ENT_QUOTES, 'UTF-8') ?> — CloudDrop</title>
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
         <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
         <link href="/css/modern.css?v=20261124-4" rel="stylesheet">
         <style>
             body.error-page { min-height:100vh; margin:0; display:flex; flex-direction:column; padding:0; background:radial-gradient(ellipse at top left,#e0e7ff 0,transparent 45%),radial-gradient(ellipse at bottom right,#cffafe 0,transparent 42%),#f8fafc; color:#0f172a; font-family:Inter,system-ui,sans-serif; }
-            .error-card { width:min(100% - 32px,620px); margin:auto; padding:clamp(28px,6vw,56px); border:1px solid rgba(148,163,184,.25); border-radius:28px; background:rgba(255,255,255,.88); box-shadow:0 24px 80px rgba(15,23,42,.12); text-align:center; }
+            .error-card { width:min(calc(100% - 32px),620px); margin:auto; padding:clamp(28px,6vw,56px); border:1px solid rgba(148,163,184,.25); border-radius:28px; background:rgba(255,255,255,.88); box-shadow:0 24px 80px rgba(15,23,42,.12); text-align:center; }
             .error-mark { width:76px;height:76px;margin:0 auto 22px;display:grid;place-items:center;border-radius:24px;background:linear-gradient(135deg,#6366f1,#06b6d4);color:white;font-size:30px;box-shadow:0 12px 30px rgba(99,102,241,.25); }
             .error-code { margin:0;color:#6366f1;font-size:clamp(4rem,13vw,7rem);font-weight:800;line-height:1;letter-spacing:-.07em; }
             .error-card h1 { margin:18px 0 10px;font-size:clamp(1.5rem,4vw,2rem);font-weight:700; }
