@@ -111,7 +111,7 @@ if ($search) {
                         <div style="overflow-x:auto;">
                             <table class="table-modern">
                                 <thead>
-                                    <tr><th>Fichier</th><th>Taille</th><th>Date</th><th>Actions</th></tr>
+                                    <tr><th>Fichier</th><th>Visibilité</th><th>Taille</th><th>Date</th><th>Actions</th></tr>
                                 </thead>
                                 <tbody>
                                     <?php foreach ($myFiles as $file): ?>
@@ -121,6 +121,11 @@ if ($search) {
                                                 <span class="icon"><?= FileManager::getFileIcon($file['file_extension']) ?></span>
                                                 <?= htmlspecialchars($file['original_name']) ?>
                                             </div>
+                                        </td>
+                                        <td>
+                                            <span class="badge-modern <?= !empty($file['is_public']) ? 'badge-success' : 'badge-primary' ?>">
+                                                <?= !empty($file['is_public']) ? 'Public' : 'Privé' ?>
+                                            </span>
                                         </td>
                                         <td><?= FileManager::formatBytes($file['file_size']) ?></td>
                                         <td><?= date('d/m/Y H:i', strtotime($file['uploaded_at'])) ?></td>

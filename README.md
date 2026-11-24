@@ -14,6 +14,7 @@ Plateforme de partage de fichiers sécurisée — comme un Google Drive partagé
 - Upload par morceaux (chunks de 10 Mo) — fichiers jusqu'à 100 Go
 - Progression temps réel avec débit et ETA
 - Choix du dossier de destination
+- Choix privé/public pour chaque transfert (public : affiché sur l’accueil et téléchargeable sans compte)
 - Retry automatique en cas d'échec
 
 ### Fichiers
@@ -79,6 +80,16 @@ chmod 755 uploads uploads/temp
 # Avec XAMPP : démarrer Apache, aller sur http://localhost/
 # Avec PHP : php -S localhost:8000 -t . 
 ```
+
+### Mise à jour d'une installation existante
+
+Les fichiers restent privés par défaut. Pour ajouter la colonne de visibilité à une base existante, exécutez une seule fois :
+
+```bash
+mysql -u root -p clouddrop < config/migrate_file_visibility.sql
+```
+
+Les nouvelles installations récupèrent déjà cette colonne depuis `config/schema.sql`.
 
 ### Premier compte admin
 

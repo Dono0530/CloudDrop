@@ -854,15 +854,18 @@ select.form-control-modern {
     gap: 1rem;
     padding: 0.85rem 1rem;
     border-radius: var(--radius-sm);
+    color: var(--text);
     transition: var(--transition);
 }
 
 .file-item:hover {
     background: var(--light-2);
+    color: var(--text);
 }
 
 [data-theme="dark"] .file-item:hover {
     background: var(--dark-3);
+    color: var(--text);
 }
 
 .file-item .file-icon {

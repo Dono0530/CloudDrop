@@ -20,14 +20,21 @@ $filters = [
     'limit' => $perPage, 'offset' => $offset,
     'folder_id' => $folderId,
 ];
+if (!Auth::isAdmin()) {
+    $filters['visible_to_user_id'] = (int)$_SESSION['user_id'];
+}
 if ($ext) $filters['extension'] = $ext;
 
+$folders = $fm->getFolders($_SESSION['user_id']);
+$currentFolder = $folderId ? $fm->getFolderById($folderId) : null;
+if ($currentFolder && !Auth::isAdmin() && (int)$currentFolder['user_id'] !== (int)$_SESSION['user_id']) {
+    http_response_code(404);
+    exit('Dossier introuvable');
+}
 $files = $fm->getFiles($filters);
 $totalFiles = $fm->countFiles($filters);
 $totalPages = max(1, ceil($totalFiles / $perPage));
-$extensions = $fm->getAvailableExtensions();
-$folders = $fm->getFolders($_SESSION['user_id']);
-$currentFolder = $folderId ? $fm->getFolderById($folderId) : null;
+$extensions = $fm->getAvailableExtensions((int)$_SESSION['user_id'], Auth::isAdmin());
 $allFolders = Auth::isAdmin() ? $fm->getAllFolders() : $folders;
 
 $sortLabels = [
@@ -171,7 +178,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'creat
                 <div style="overflow-x:auto;">
                     <table class="table-modern">
                         <thead>
-                            <tr><th>Fichier</th><th>Taille</th><th>Uploadé par</th><th>Date</th><th>Actions</th></tr>
+                            <tr><th>Fichier</th><th>Visibilité</th><th>Taille</th><th>Uploadé par</th><th>Date</th><th>Actions</th></tr>
                         </thead>
                         <tbody>
                             <?php foreach ($files as $file): ?>
@@ -181,6 +188,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'creat
                                         <span class="icon"><?= FileManager::getFileIcon($file['file_extension']) ?></span>
                                         <span><?= htmlspecialchars($file['original_name']) ?></span>
                                     </div>
+                                </td>
+                                <td>
+                                    <span class="badge-modern <?= !empty($file['is_public']) ? 'badge-success' : 'badge-primary' ?>">
+                                        <?= !empty($file['is_public']) ? 'Public' : 'Privé' ?>
+                                    </span>
                                 </td>
                                 <td><?= FileManager::formatBytes($file['file_size']) ?></td>
                                 <td>
@@ -198,15 +210,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'creat
                                         <span class="btn-modern btn-outline-modern btn-sm" style="visibility:hidden;pointer-events:none;" title="Aperçu non disponible"><i class="bi bi-eye"></i></span>
                                         <?php endif; ?>
                                         <a href="/php/download_file.php?id=<?= $file['id'] ?>" class="btn-modern btn-primary-modern btn-sm" title="Télécharger"><i class="bi bi-download"></i></a>
+                                        <?php if ((int)$file['user_id'] === (int)$_SESSION['user_id'] || Auth::isAdmin()): ?>
                                         <button class="btn-modern btn-outline-modern btn-sm" title="Partager"
                                             onclick="shareFile(<?= $file['id'] ?>, '<?= htmlspecialchars(addslashes($file['original_name'])) ?>')">
                                             <i class="bi bi-share"></i>
                                         </button>
-                                        <?php if ((int)$file['user_id'] === $_SESSION['user_id'] || Auth::isAdmin()): ?>
                                         <button class="btn-modern btn-outline-modern btn-sm" title="Déplacer"
                                             onclick="openMoveModal(<?= $file['id'] ?>, '<?= htmlspecialchars(addslashes($file['original_name'])) ?>')">
                                             <i class="bi bi-folder-symlink"></i>
                                         </button>
+                                        <form method="POST" action="/php/actions.php" onsubmit="return confirm('Supprimer ce fichier ?');" style="display:inline;">
+                                            <?= Auth::csrfField() ?>
+                                            <input type="hidden" name="action" value="delete_file">
+                                            <input type="hidden" name="file_id" value="<?= $file['id'] ?>">
+                                            <button type="submit" class="btn-modern btn-ghost btn-sm" title="Supprimer">
+                                                <i class="bi bi-trash3" style="color:var(--danger);"></i>
+                                            </button>
+                                        </form>
                                         <?php endif; ?>
                                     </div>
                                 </td>

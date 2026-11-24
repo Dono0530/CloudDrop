@@ -1,8 +1,6 @@
 <?php
 require_once __DIR__ . '/../config/init.php';
 require_once __DIR__ . '/../includes/Auth.php';
-Auth::requireLogin();
-
 require_once __DIR__ . '/../includes/FileManager.php';
 
 $fm = new FileManager();
@@ -13,17 +11,22 @@ $fileName = $_GET['file'] ?? '';
 
 if ($fileId > 0) {
     $file = $fm->getFileById($fileId);
-    if (!$file) {
-        http_response_code(404);
-        die('Fichier introuvable');
-    }
-    $safeFileName = basename($file['filename']);
 } elseif (!empty($fileName)) {
-    $safeFileName = basename($fileName);
+    $file = $fm->getFileByFilename($fileName);
 } else {
     http_response_code(400);
     die('Aucun fichier spécifié');
 }
+
+if (!$file || !$fm->canAccessFile(
+    $file,
+    Auth::isLoggedIn() ? (int)$_SESSION['user_id'] : null,
+    Auth::isAdmin()
+)) {
+    http_response_code(404);
+    die('Fichier introuvable');
+}
+$safeFileName = basename($file['filename']);
 
 // Chemin sécurisé
 $uploadDirectory = realpath(__DIR__ . '/../uploads/');

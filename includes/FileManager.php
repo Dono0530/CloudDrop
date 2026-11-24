@@ -16,12 +16,12 @@ class FileManager {
 
     // ── FICHIERS ──────────────────────────────────────────────────
 
-    public function recordUpload(string $filename, int $userId, int $fileSize, string $originalName, int $folderId = 0): array {
+    public function recordUpload(string $filename, int $userId, int $fileSize, string $originalName, int $folderId = 0, bool $isPublic = false): array {
         $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
         $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
         $id = $this->db->insert(
-            "INSERT INTO files (filename, original_name, user_id, file_size, file_extension, ip_address, folder_id, uploaded_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())",
-            [$filename, $originalName, $userId, $fileSize, $ext, $ip, $folderId]
+            "INSERT INTO files (filename, original_name, user_id, file_size, file_extension, ip_address, folder_id, is_public, uploaded_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())",
+            [$filename, $originalName, $userId, $fileSize, $ext, $ip, $folderId, $isPublic ? 1 : 0]
         );
         $this->db->insert("INSERT INTO activity_log (user_id, action, details, ip_address, created_at) VALUES (?, 'upload', ?, ?, NOW())",
             [$userId, "Upload: $originalName (" . self::formatBytes($fileSize) . ")", $ip]);
@@ -31,11 +31,32 @@ class FileManager {
     public function getFiles(array $filters = []): array {
         $sql = "SELECT f.*, u.pseudo as uploader_name FROM files f LEFT JOIN users u ON f.user_id = u.id WHERE f.deleted_at IS NULL";
         $params = [];
-        if (!empty($filters['user_id']))    { $sql .= " AND f.user_id = ?"; $params[] = $filters['user_id']; }
-        if (!empty($filters['folder_id']))  { $sql .= " AND f.folder_id = ?"; $params[] = (int)$filters['folder_id']; }
-        else { $sql .= " AND f.folder_id = 0"; }
-        if (!empty($filters['search']))     { $sql .= " AND (f.original_name LIKE ? OR f.filename LIKE ?)"; $s = '%' . $filters['search'] . '%'; $params[] = $s; $params[] = $s; }
-        if (!empty($filters['extension']))  { $sql .= " AND f.file_extension = ?"; $params[] = $filters['extension']; }
+        if (!empty($filters['user_id'])) {
+            $sql .= " AND f.user_id = ?";
+            $params[] = (int)$filters['user_id'];
+        }
+        if (array_key_exists('folder_id', $filters)) {
+            $sql .= " AND f.folder_id = ?";
+            $params[] = (int)$filters['folder_id'];
+        }
+        if (array_key_exists('is_public', $filters)) {
+            $sql .= " AND f.is_public = ?";
+            $params[] = !empty($filters['is_public']) ? 1 : 0;
+        }
+        if (array_key_exists('visible_to_user_id', $filters)) {
+            $sql .= " AND (f.is_public = 1 OR f.user_id = ?)";
+            $params[] = (int)$filters['visible_to_user_id'];
+        }
+        if (!empty($filters['search'])) {
+            $sql .= " AND (f.original_name LIKE ? OR f.filename LIKE ?)";
+            $s = '%' . $filters['search'] . '%';
+            $params[] = $s;
+            $params[] = $s;
+        }
+        if (!empty($filters['extension'])) {
+            $sql .= " AND f.file_extension = ?";
+            $params[] = $filters['extension'];
+        }
 
         $sort = $filters['sort'] ?? 'date_desc';
         $sql .= match ($sort) {
@@ -44,22 +65,61 @@ class FileManager {
             'size_desc' => " ORDER BY f.file_size DESC", default => " ORDER BY f.uploaded_at DESC",
         };
 
-        if (!empty($filters['limit'])) { $sql .= " LIMIT ? OFFSET ?"; $params[] = (int)$filters['limit']; $params[] = (int)($filters['offset'] ?? 0); }
+        if (!empty($filters['limit'])) {
+            $sql .= " LIMIT ? OFFSET ?";
+            $params[] = (int)$filters['limit'];
+            $params[] = (int)($filters['offset'] ?? 0);
+        }
         return $this->db->fetchAll($sql, $params);
     }
 
     public function countFiles(array $filters = []): int {
         $sql = "SELECT COUNT(*) as total FROM files WHERE deleted_at IS NULL";
         $params = [];
-        if (!empty($filters['user_id']))   { $sql .= " AND user_id = ?"; $params[] = $filters['user_id']; }
-        if (!empty($filters['folder_id'])) { $sql .= " AND folder_id = ?"; $params[] = (int)$filters['folder_id']; }
-        else { $sql .= " AND folder_id = 0"; }
-        if (!empty($filters['search']))    { $sql .= " AND (original_name LIKE ? OR filename LIKE ?)"; $s = '%' . $filters['search'] . '%'; $params[] = $s; $params[] = $s; }
+        if (!empty($filters['user_id'])) {
+            $sql .= " AND user_id = ?";
+            $params[] = (int)$filters['user_id'];
+        }
+        if (array_key_exists('folder_id', $filters)) {
+            $sql .= " AND folder_id = ?";
+            $params[] = (int)$filters['folder_id'];
+        }
+        if (array_key_exists('is_public', $filters)) {
+            $sql .= " AND is_public = ?";
+            $params[] = !empty($filters['is_public']) ? 1 : 0;
+        }
+        if (array_key_exists('visible_to_user_id', $filters)) {
+            $sql .= " AND (is_public = 1 OR user_id = ?)";
+            $params[] = (int)$filters['visible_to_user_id'];
+        }
+        if (!empty($filters['search'])) {
+            $sql .= " AND (original_name LIKE ? OR filename LIKE ?)";
+            $s = '%' . $filters['search'] . '%';
+            $params[] = $s;
+            $params[] = $s;
+        }
+        if (!empty($filters['extension'])) {
+            $sql .= " AND file_extension = ?";
+            $params[] = $filters['extension'];
+        }
         return (int)($this->db->fetchOne($sql, $params)['total'] ?? 0);
     }
 
     public function getFileById(int $id): ?array {
         return $this->db->fetchOne("SELECT f.*, u.pseudo as uploader_name FROM files f LEFT JOIN users u ON f.user_id = u.id WHERE f.id = ? AND f.deleted_at IS NULL", [$id]);
+    }
+
+    public function getFileByFilename(string $filename): ?array {
+        return $this->db->fetchOne(
+            "SELECT f.*, u.pseudo as uploader_name FROM files f LEFT JOIN users u ON f.user_id = u.id WHERE f.filename = ? AND f.deleted_at IS NULL",
+            [basename($filename)]
+        );
+    }
+
+    public function canAccessFile(array $file, ?int $userId = null, bool $isAdmin = false): bool {
+        return $isAdmin
+            || !empty($file['is_public'])
+            || ($userId !== null && (int)$file['user_id'] === $userId);
     }
 
     public function deleteFile(int $fileId, int $userId, bool $isAdmin = false): bool {
@@ -153,9 +213,10 @@ class FileManager {
 
     // ── PARTAGES ──────────────────────────────────────────────────
 
-    public function createShare(int $fileId, int $userId, int $hours = 24): array {
+    public function createShare(int $fileId, int $userId, int $hours = 24, bool $isAdmin = false): array {
         $file = $this->getFileById($fileId);
         if (!$file) throw new Exception('Fichier introuvable');
+        if ((int)$file['user_id'] !== $userId && !$isAdmin) throw new Exception('Permission refusée');
         $token = bin2hex(random_bytes(32));
         $expiresAt = date('Y-m-d H:i:s', strtotime("+{$hours} hours"));
         $id = $this->db->insert("INSERT INTO shares (token, file_id, user_id, expires_at) VALUES (?, ?, ?, ?)",
@@ -216,8 +277,15 @@ class FileManager {
         return $this->db->fetchAll("SELECT al.*, u.pseudo FROM activity_log al LEFT JOIN users u ON al.user_id = u.id ORDER BY al.created_at DESC LIMIT ?", [$limit]);
     }
 
-    public function getAvailableExtensions(): array {
-        return $this->db->fetchAll("SELECT DISTINCT file_extension, COUNT(*) as count FROM files WHERE deleted_at IS NULL GROUP BY file_extension ORDER BY count DESC");
+    public function getAvailableExtensions(?int $userId = null, bool $isAdmin = false): array {
+        $sql = "SELECT DISTINCT file_extension, COUNT(*) as count FROM files WHERE deleted_at IS NULL";
+        $params = [];
+        if ($userId !== null && !$isAdmin) {
+            $sql .= " AND (is_public = 1 OR user_id = ?)";
+            $params[] = $userId;
+        }
+        $sql .= " GROUP BY file_extension ORDER BY count DESC";
+        return $this->db->fetchAll($sql, $params);
     }
 
     // ── HELPERS ───────────────────────────────────────────────────

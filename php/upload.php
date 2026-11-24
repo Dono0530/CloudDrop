@@ -60,6 +60,15 @@ $selectedFolder = (int)($_GET['folder'] ?? 0);
             </div>
             <?php endif; ?>
 
+            <div class="form-group-modern mb-3">
+                <label for="visibilitySelect"><i class="bi bi-shield-lock"></i> Visibilité des fichiers sélectionnés</label>
+                <select id="visibilitySelect" class="form-control-modern">
+                    <option value="0" selected>Privé — visible uniquement par vous et les administrateurs</option>
+                    <option value="1">Public — visible sur l’accueil et téléchargeable sans compte</option>
+                </select>
+                <small style="color:var(--text-muted);">Les fichiers publics apparaissent aussi sur la page d’accueil.</small>
+            </div>
+
             <!-- Drop Zone -->
             <div class="upload-zone" id="dropZone">
                 <input type="file" id="fileInput" multiple>

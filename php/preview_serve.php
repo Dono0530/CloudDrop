@@ -13,7 +13,14 @@ $fileId = (int)($_GET['id'] ?? 0);
 $fm = new FileManager();
 $file = $fm->getFileById($fileId);
 
-if (!$file) { http_response_code(404); die('Fichier introuvable'); }
+if (!$file || !$fm->canAccessFile(
+    $file,
+    Auth::isLoggedIn() ? (int)$_SESSION['user_id'] : null,
+    Auth::isAdmin()
+)) {
+    http_response_code(404);
+    die('Fichier introuvable');
+}
 
 $filePath = UPLOAD_DIR . $file['filename'];
 if (!file_exists($filePath)) { http_response_code(404); die('Fichier introuvable'); }

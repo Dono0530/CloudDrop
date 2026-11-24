@@ -61,6 +61,7 @@ class UploadItem {
         this.file = file;
         this.index = index;
         this.folderId = folderId || 0;
+        this.isPublic = false;
         this.id = Date.now() + '_' + Math.random().toString(36).substr(2, 9);
         this.totalChunks = Math.ceil(file.size / CHUNK_SIZE);
         this.uploaded = 0;
@@ -127,6 +128,7 @@ class UploadItem {
             'X-File-Id': this.id,
             'X-Folder-Id': this.folderId,
             'X-File-Size': this.file.size,
+            'X-File-Public': this.isPublic ? '1' : '0',
             'Content-Type': 'application/octet-stream',
         };
 
@@ -252,6 +254,7 @@ class UploadQueue {
 document.addEventListener('DOMContentLoaded', () => {
     const dropZone       = document.getElementById('dropZone');
     const fileInput      = document.getElementById('fileInput');
+    const visibilitySelect = document.getElementById('visibilitySelect');
     const fileQueue      = document.getElementById('fileQueue');
     const uploadBtn      = document.getElementById('uploadBtn');
     const cancelBtn      = document.getElementById('cancelBtn');
@@ -340,7 +343,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const folderEl = document.getElementById('folderSelect');
         const folderId = folderEl ? parseInt(folderEl.value) || 0 : 0;
-        queue.items.forEach(item => { item.folderId = folderId; });
+        const isPublic = visibilitySelect ? visibilitySelect.value === '1' : false;
+        queue.items.forEach(item => {
+            item.folderId = folderId;
+            item.isPublic = isPublic;
+        });
+        if (visibilitySelect) visibilitySelect.disabled = true;
 
         isUploading = true;
         uploadBtn.style.display = 'none';
@@ -362,6 +370,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const g = queue.globalProgress;
         isUploading = false;
+        if (visibilitySelect) visibilitySelect.disabled = false;
         cancelBtn.style.display = 'none';
         uploadBtn.style.display = '';
         uploadBtn.disabled = false;
@@ -385,6 +394,7 @@ document.addEventListener('DOMContentLoaded', () => {
     cancelBtn.addEventListener('click', () => {
         queue.cancelAll();
         isUploading = false;
+        if (visibilitySelect) visibilitySelect.disabled = false;
         cancelBtn.style.display = 'none';
         uploadBtn.style.display = '';
         globalLabel.textContent = 'Annulé';

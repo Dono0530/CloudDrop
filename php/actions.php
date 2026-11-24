@@ -61,7 +61,7 @@ switch ($action) {
     case 'create_share':
         header('Content-Type: application/json');
         try {
-            $share = $fm->createShare((int)($_POST['file_id'] ?? 0), $_SESSION['user_id'], (int)($_POST['expiry_hours'] ?? 24));
+            $share = $fm->createShare((int)($_POST['file_id'] ?? 0), $_SESSION['user_id'], (int)($_POST['expiry_hours'] ?? 24), Auth::isAdmin());
             $url = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'] . '/php/share.php?token=' . $share['token'];
             echo json_encode(['success' => true, 'url' => $url, 'token' => $share['token'], 'expires_at' => $share['expires_at']]);
         } catch (Exception $e) { echo json_encode(['success' => false, 'error' => $e->getMessage()]); }

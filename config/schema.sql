@@ -34,13 +34,15 @@ CREATE TABLE IF NOT EXISTS files (
     file_extension VARCHAR(20) DEFAULT '',
     ip_address VARCHAR(45) DEFAULT '',
     folder_id INT DEFAULT 0,
+    is_public TINYINT(1) NOT NULL DEFAULT 0,
     uploaded_at DATETIME NOT NULL,
     deleted_at DATETIME DEFAULT NULL,
     deleted_by INT DEFAULT NULL,
     INDEX idx_user_id (user_id),
     INDEX idx_uploaded_at (uploaded_at),
     INDEX idx_deleted_at (deleted_at),
-    INDEX idx_folder_id (folder_id)
+    INDEX idx_folder_id (folder_id),
+    INDEX idx_is_public (is_public)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Table des liens de partage

@@ -13,7 +13,14 @@ $fm = new FileManager();
 $fileId = (int)($_GET['id'] ?? 0);
 $file = $fm->getFileById($fileId);
 
-if (!$file) { http_response_code(404); die('Fichier introuvable'); }
+if (!$file || !$fm->canAccessFile(
+    $file,
+    Auth::isLoggedIn() ? (int)$_SESSION['user_id'] : null,
+    Auth::isAdmin()
+)) {
+    http_response_code(404);
+    die('Fichier introuvable');
+}
 
 $ext = strtolower($file['file_extension']);
 $type = FileManager::getPreviewType($ext);

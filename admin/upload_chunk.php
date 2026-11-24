@@ -28,6 +28,7 @@ $fileName = basename(urldecode($_SERVER['HTTP_X_FILE_NAME'] ?? ''));
 $fileId = $_SERVER['HTTP_X_FILE_ID'] ?? '';
 $folderId = (int)($_SERVER['HTTP_X_FOLDER_ID'] ?? 0);
 $fileSize = (int)($_SERVER['HTTP_X_FILE_SIZE'] ?? 0);
+$isPublic = ($_SERVER['HTTP_X_FILE_PUBLIC'] ?? '0') === '1';
 
 // ── Validation ───────────────────────────────────────────────
 if (empty($fileName) || empty($fileId) || $totalChunks <= 0) {
@@ -38,6 +39,18 @@ if (empty($fileName) || empty($fileId) || $totalChunks <= 0) {
 if (!preg_match('/^[0-9]+_[a-zA-Z0-9]+$/', $fileId)) {
     echo json_encode(['success' => false, 'error' => 'ID de fichier invalide']);
     exit;
+}
+
+// Vérifier que le dossier de destination appartient à l'utilisateur.
+require_once __DIR__ . '/../includes/FileManager.php';
+$fm = new FileManager();
+if ($folderId > 0) {
+    $folder = $fm->getFolderById($folderId);
+    if (!$folder || (int)$folder['user_id'] !== (int)$_SESSION['user_id']) {
+        http_response_code(403);
+        echo json_encode(['success' => false, 'error' => 'Dossier non autorisé']);
+        exit;
+    }
 }
 
 // ── Lire le body binaire brut ────────────────────────────────
@@ -130,9 +143,7 @@ if ($chunkIndex === $totalChunks - 1) {
     $originalName = urldecode($_SERVER['HTTP_X_FILE_NAME'] ?? $safeName);
 
     // Enregistrer dans la BDD
-    require_once __DIR__ . '/../includes/FileManager.php';
-    $fm = new FileManager();
-    $record = $fm->recordUpload(basename($finalPath), $_SESSION['user_id'], $finalSize, $originalName, $folderId);
+    $record = $fm->recordUpload(basename($finalPath), $_SESSION['user_id'], $finalSize, $originalName, $folderId, $isPublic);
 
     echo json_encode([
         'success' => true,

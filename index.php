@@ -11,7 +11,13 @@ $isAdmin = Auth::isAdmin();
 require_once __DIR__ . '/includes/FileManager.php';
 $fm = new FileManager();
 $stats = $fm->getGlobalStats();
-$recentFiles = $fm->getFiles(['limit' => 5, 'sort' => 'date_desc']);
+$recentFilters = ['limit' => 5, 'sort' => 'date_desc'];
+if ($loggedIn && !$isAdmin) {
+    $recentFilters['visible_to_user_id'] = (int)$_SESSION['user_id'];
+} elseif (!$loggedIn) {
+    $recentFilters['is_public'] = true;
+}
+$recentFiles = $fm->getFiles($recentFilters);
 ?>
 <!DOCTYPE html>
 <html lang="fr" data-theme="light">
@@ -128,11 +134,9 @@ $recentFiles = $fm->getFiles(['limit' => 5, 'sort' => 'date_desc']);
                                 <span><?= date('d/m/Y H:i', strtotime($file['uploaded_at'])) ?></span>
                             </div>
                         </div>
-                        <?php if ($loggedIn): ?>
                         <div class="file-actions">
-                            <a href="/php/download_file.php?id=<?= $file['id'] ?>" class="btn-modern btn-outline-modern btn-sm"><i class="bi bi-download"></i></a>
+                            <a href="/php/download_file.php?id=<?= $file['id'] ?>" class="btn-modern btn-outline-modern btn-sm" title="Télécharger"><i class="bi bi-download"></i></a>
                         </div>
-                        <?php endif; ?>
                     </div>
                     <?php endforeach; ?>
                 </div>
