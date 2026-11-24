@@ -2,6 +2,7 @@
 function render_error_page(int $statusCode): void {
     $pages = [
         400 => ['title' => 'Requête invalide', 'message' => 'La demande ne peut pas être traitée. Vérifiez le lien et réessayez.'],
+        405 => ['title' => 'Méthode non autorisée', 'message' => 'Cette action doit être effectuée depuis le site. Revenez à la page précédente.'],
         401 => ['title' => 'Connexion requise', 'message' => 'Connectez-vous pour accéder à cette page.'],
         403 => ['title' => 'Accès refusé', 'message' => 'Votre compte ne dispose pas des droits nécessaires pour afficher cette page.'],
         404 => ['title' => 'Page introuvable', 'message' => 'Cette adresse n’existe pas ou le contenu n’est plus disponible.'],
