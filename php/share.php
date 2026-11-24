@@ -122,12 +122,6 @@ $downloadLimitReached = !$expired && $share['download_limit'] !== null
                     </details>
                 <?php endif; ?>
             <?php endif; ?>
-                <?php if (!empty($share['download_limit'])): ?>
-                    <p style="text-align:center;color:var(--text-muted);font-size:.85rem;margin-top:1rem;">
-                        Téléchargements restants : <?= max(0, (int)$share['download_limit'] - (int)$share['download_count']) ?> / <?= (int)$share['download_limit'] ?>
-                    </p>
-                <?php endif; ?>
-            <?php endif; ?>
 
             <div class="share-footer">
                 <p>Propulsé par <a href="/" style="color:var(--primary);text-decoration:none;font-weight:500;">CloudDrop</a></p>
