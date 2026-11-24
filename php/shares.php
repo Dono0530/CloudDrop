@@ -64,7 +64,7 @@ $durations = [1 => '1 heure', 24 => '24 heures', 168 => '7 jours', 720 => '30 jo
             <?php else: ?>
                 <div style="overflow-x:auto;">
                     <table class="table-modern">
-                        <thead><tr><th>Fichier</th><th>Lien</th><th>Temps restant</th><th>Actions</th></tr></thead>
+                        <thead><tr><th>Fichier</th><th>Lien</th><th>Temps restant</th><th>Protection et activité</th><th>Actions</th></tr></thead>
                         <tbody>
                         <?php foreach ($shares as $share): ?>
                             <?php $fileDeleted = !empty($share['file_deleted_at']) || empty($share['original_name']); ?>
@@ -87,6 +87,49 @@ $durations = [1 => '1 heure', 24 => '24 heures', 168 => '7 jours', 720 => '30 jo
                                         <?= strtotime($share['expires_at']) > time() ? 'Calcul…' : 'Expiré' ?>
                                     </span>
                                     <div><small style="color:var(--text-muted);">Échéance : <?= date('d/m/Y H:i', strtotime($share['expires_at'])) ?></small></div>
+                                </td>
+                                <td>
+                                    <?php if (!$fileDeleted): ?>
+                                    <form method="POST" action="/php/actions.php" class="mb-2">
+                                        <?= Auth::csrfField() ?>
+                                        <input type="hidden" name="action" value="update_share_settings">
+                                        <input type="hidden" name="share_id" value="<?= (int)$share['id'] ?>">
+                                        <label class="form-label" style="font-size:.8rem;">Limite de téléchargements</label>
+                                        <select name="download_limit" class="form-control-modern mb-2">
+                                            <option value="" <?= $share['download_limit'] === null ? 'selected' : '' ?>>Illimité</option>
+                                            <?php foreach ([1, 5, 10, 25, 50, 100] as $limit): ?>
+                                                <option value="<?= $limit ?>" <?= (int)$share['download_limit'] === $limit ? 'selected' : '' ?>><?= $limit ?></option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                        <small style="color:var(--text-muted);display:block;margin-bottom:.4rem;">
+                                            <?= (int)$share['download_count'] ?> téléchargement(s) effectué(s)
+                                            <?= !empty($share['password_protected']) ? ' · Mot de passe actif' : ' · Sans mot de passe' ?>
+                                        </small>
+                                        <input type="password" name="share_password" class="form-control-modern mb-2" minlength="8" maxlength="128" autocomplete="new-password" placeholder="Nouveau mot de passe (facultatif)">
+                                        <?php if (!empty($share['password_protected'])): ?>
+                                            <label style="font-size:.8rem;display:block;margin-bottom:.5rem;">
+                                                <input type="checkbox" name="remove_password" value="1"> Retirer le mot de passe
+                                            </label>
+                                        <?php endif; ?>
+                                        <button type="submit" class="btn-modern btn-outline-modern btn-sm">Enregistrer la protection</button>
+                                    </form>
+                                    <?php endif; ?>
+                                    <details>
+                                        <summary>Historique des accès</summary>
+                                        <?php $accessLogs = $fm->getShareAccessLogs((int)$share['id'], $userId); ?>
+                                        <?php if (empty($accessLogs)): ?>
+                                            <small style="color:var(--text-muted);">Aucun téléchargement enregistré.</small>
+                                        <?php else: ?>
+                                            <ul style="padding-left:1.2rem;margin:.5rem 0;font-size:.8rem;">
+                                                <?php foreach ($accessLogs as $access): ?>
+                                                    <li title="<?= htmlspecialchars($access['user_agent'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
+                                                        <?= date('d/m/Y H:i:s', strtotime($access['accessed_at'])) ?>
+                                                        · <?= htmlspecialchars($access['ip_address']) ?>
+                                                    </li>
+                                                <?php endforeach; ?>
+                                            </ul>
+                                        <?php endif; ?>
+                                    </details>
                                 </td>
                                 <td class="share-actions">
                                     <?php if (!$fileDeleted): ?>
