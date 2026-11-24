@@ -181,12 +181,12 @@ class FileManager {
                 && (strpos($realPath, $uploadDirectory . DIRECTORY_SEPARATOR) !== 0 || !is_file($realPath))) {
                 throw new Exception('Chemin de stockage invalide');
             }
-            if ($realPath !== false && !unlink($realPath)) {
-                throw new Exception('Impossible de supprimer le fichier du stockage');
-            }
         }
 
         $this->db->execute("UPDATE files SET deleted_at = NOW(), deleted_by = ? WHERE id = ?", [$userId, $fileId]);
+        if ($realPath !== false && !unlink($realPath)) {
+            throw new Exception('Impossible de supprimer le fichier du stockage');
+        }
         $this->db->insert("INSERT INTO activity_log (user_id, action, details, ip_address, created_at) VALUES (?, 'delete', ?, ?, NOW())",
             [$userId, "Suppression: {$file['original_name']}", clouddrop_client_ip()]);
         return true;
