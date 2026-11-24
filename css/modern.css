@@ -146,6 +146,8 @@ body::before {
     grid-column: 1;
     justify-self: start;
 }
+.navbar-drive .site-nav-logout { margin: 0; }
+.navbar-drive .site-nav-logout button { font-family: inherit; cursor: pointer; border: 0; }
 .navbar-drive .site-nav-links {
     grid-column: 2;
     justify-content: center;
