@@ -25,9 +25,9 @@ if (!Auth::isAdmin()) {
 }
 if ($ext) $filters['extension'] = $ext;
 
-$folders = $fm->getFolders($_SESSION['user_id']);
+$folders = $fm->getFoldersVisibleToUser((int)$_SESSION['user_id'], Auth::isAdmin());
 $currentFolder = $folderId ? $fm->getFolderById($folderId) : null;
-if ($currentFolder && !Auth::isAdmin() && (int)$currentFolder['user_id'] !== (int)$_SESSION['user_id']) {
+if ($currentFolder && !$fm->canAccessFolder($currentFolder, (int)$_SESSION['user_id'], Auth::isAdmin())) {
     http_response_code(404);
     exit('Dossier introuvable');
 }
@@ -104,7 +104,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'creat
                         <i class="bi bi-folder-fill" style="color:var(--warning);font-size:1.5rem;"></i>
                         <div>
                             <div style="font-weight:500;font-size:0.9rem;"><?= htmlspecialchars($folder['name']) ?></div>
-                            <div style="font-size:0.75rem;color:var(--text-muted);"><?= $folder['file_count'] ?> fichier(s)</div>
+                            <div style="font-size:0.75rem;color:var(--text-muted);"><?= $folder['file_count'] ?> fichier(s)
+                                            <?php if (!empty($folder['owner_name']) && (int)$folder['user_id'] !== (int)$_SESSION['user_id']): ?>
+                                                <div style="font-size:0.75rem;color:var(--text-muted);">Créé par <?= htmlspecialchars($folder['owner_name']) ?></div>
+                                            <?php endif; ?></div>
                         </div>
                     </a>
                     <form method="POST" action="/php/actions.php" onsubmit="return confirm('Supprimer ce dossier ? Les fichiers seront déplacés à la racine.');" style="display:inline;">
