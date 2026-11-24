@@ -74,6 +74,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'creat
             <a href="/php/dashboard.php" class="nav-link"><i class="bi bi-speedometer2"></i> Dashboard</a>
             <a href="/php/upload.php" class="nav-link"><i class="bi bi-cloud-arrow-up"></i> Upload</a>
             <a href="/php/download.php" class="nav-link active"><i class="bi bi-folder2-open"></i> Fichiers</a>
+            <a href="/php/shares.php" class="nav-link"><i class="bi bi-link-45deg"></i> Mes liens</a>
             <a href="/php/profile.php" class="nav-link"><i class="bi bi-person"></i> Profil</a>
             <?php if ($_SESSION['user_role'] === 'admin'): ?>
                 <a href="/admin/index.php" class="nav-link"><i class="bi bi-shield-lock"></i> Admin</a>
@@ -359,9 +360,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'creat
                 </div>
                 <div id="shareResult" style="display:none;">
                     <label style="font-size:0.85rem;font-weight:500;margin-bottom:0.3rem;display:block;">Lien de partage</label>
-                    <div class="input-group">
-                        <input type="text" id="shareLink" class="form-control-modern" readonly style="font-size:0.8rem;">
-                        <button class="btn-modern btn-primary-modern btn-sm" onclick="copyShareLink()"><i class="bi bi-clipboard"></i></button>
+                    <div style="display:flex;align-items:stretch;gap:.5rem;width:100%;flex-wrap:nowrap;">
+                        <input type="text" id="shareLink" class="form-control-modern" readonly style="font-size:0.8rem;min-width:0;flex:1;">
+                        <button class="btn-modern btn-primary-modern btn-sm" style="flex:0 0 auto;white-space:nowrap;" onclick="copyShareLink()"><i class="bi bi-clipboard"></i> Copier</button>
                     </div>
                 </div>
             </div>
@@ -401,7 +402,7 @@ async function createShare() {
     const res = await fetch('/php/actions.php', { method: 'POST', body: fd });
     const data = await res.json();
     if (data.success) {
-        document.getElementById('shareLink').value = data.url;
+        document.getElementById('shareLink').value = new URL(data.url, window.location.origin).href;
         document.getElementById('shareResult').style.display = 'block';
         showToast('Lien de partage créé', 'success');
     } else {
