@@ -291,15 +291,50 @@ class FileManager {
 
     // ── PARTAGES ──────────────────────────────────────────────────
 
+    private const SHARE_DURATIONS = [1, 24, 168, 720];
+
     public function createShare(int $fileId, int $userId, int $hours = 24, bool $isAdmin = false): array {
         $file = $this->getFileById($fileId);
         if (!$file) throw new Exception('Fichier introuvable');
         if ((int)$file['user_id'] !== $userId && !$isAdmin) throw new Exception('Permission refusée');
+        if (!in_array($hours, self::SHARE_DURATIONS, true)) throw new Exception('Durée de partage invalide');
+
         $token = bin2hex(random_bytes(32));
-        $expiresAt = date('Y-m-d H:i:s', strtotime("+{$hours} hours"));
+        $expiresAt = date('Y-m-d H:i:s', time() + ($hours * 3600));
         $id = $this->db->insert("INSERT INTO shares (token, file_id, user_id, expires_at) VALUES (?, ?, ?, ?)",
             [$token, $fileId, $userId, $expiresAt]);
         return $this->db->fetchOne("SELECT * FROM shares WHERE id = ?", [$id]);
+    }
+
+    public function getUserShares(int $userId): array {
+        return $this->db->fetchAll(
+            "SELECT s.id, s.token, s.file_id, s.expires_at, s.created_at,
+                    f.original_name, f.file_extension, f.file_size
+             FROM shares s
+             JOIN files f ON f.id = s.file_id
+             WHERE s.user_id = ? AND f.deleted_at IS NULL
+             ORDER BY s.created_at DESC",
+            [$userId]
+        );
+    }
+
+    public function updateShareExpiry(int $shareId, int $userId, int $hours): bool {
+        if (!in_array($hours, self::SHARE_DURATIONS, true)) throw new Exception('Durée de partage invalide');
+        $share = $this->db->fetchOne("SELECT id FROM shares WHERE id = ? AND user_id = ?", [$shareId, $userId]);
+        if (!$share) throw new Exception('Lien de partage introuvable');
+
+        $expiresAt = date('Y-m-d H:i:s', time() + ($hours * 3600));
+        $this->db->execute("UPDATE shares SET expires_at = ? WHERE id = ? AND user_id = ?", [$expiresAt, $shareId, $userId]);
+        return true;
+    }
+
+    public function deleteShare(int $shareId, int $userId): bool {
+        $deleted = $this->db->execute("DELETE FROM shares WHERE id = ? AND user_id = ?", [$shareId, $userId]);
+        if (!$deleted) {
+            $share = $this->db->fetchOne("SELECT id FROM shares WHERE id = ? AND user_id = ?", [$shareId, $userId]);
+            if ($share) throw new Exception('Impossible de supprimer le lien');
+        }
+        return true;
     }
 
     public function getShareByToken(string $token): ?array {
