@@ -19,7 +19,7 @@ if (isset($_GET['share'])) {
 
     if (!empty($share['password_hash'])) {
         $submittedPassword = $_POST['share_password'] ?? '';
-        $remoteIp = (string)($_SERVER['REMOTE_ADDR'] ?? '');
+        $remoteIp = clouddrop_client_ip();
         if ($fm->isSharePasswordRateLimited((int)$share['id'], $remoteIp)) {
             http_response_code(429);
             die('Trop de tentatives. Réessayez dans 15 minutes.');
@@ -54,7 +54,7 @@ if (isset($_GET['share'])) {
     header("Content-Disposition: attachment; filename=\"$asciiFileName\"; filename*=UTF-8''" . rawurlencode($displayName));
     if (!$fm->recordShareDownload(
         (int)$share['id'],
-        (string)($_SERVER['REMOTE_ADDR'] ?? ''),
+        clouddrop_client_ip(),
         (string)($_SERVER['HTTP_USER_AGENT'] ?? '')
     )) {
         http_response_code(410);
