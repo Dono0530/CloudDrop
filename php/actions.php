@@ -24,7 +24,7 @@ if (isset($_GET['share'])) {
     $ext = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
     if (in_array($ext, DANGEROUS_EXTENSIONS)) { http_response_code(403); die('Type non autorisé'); }
 
-    $displayName = str_replace(["\\r", "\\n", "\\0"], '', (string)$file['original_name']);
+    $displayName = str_replace(["\r", "\n", "\0"], '', (string)$file['original_name']);
     $asciiFileName = preg_replace('/[^A-Za-z0-9._ -]/', '_', $displayName) ?: 'download';
     header('Content-Type: application/octet-stream');
     header("Content-Disposition: attachment; filename=\"$asciiFileName\"; filename*=UTF-8''" . rawurlencode($displayName));
