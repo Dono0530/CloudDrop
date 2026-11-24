@@ -435,6 +435,7 @@ function copyShareLink() {
     showToast('Lien copié !', 'success');
 }
 </script>
+<?php require __DIR__ . '/../includes/SiteFooter.php'; ?>
 </body>
 </html>
 
