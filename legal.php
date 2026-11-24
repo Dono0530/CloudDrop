@@ -21,7 +21,6 @@ require_once __DIR__ . '/config/init.php';
 </head>
 <body>
 <?php require __DIR__ . '/includes/SiteHeader.php'; ?>
-<?php require __DIR__ . '/includes/SiteHeader.php'; ?>
 <main class="container-fluid px-4 py-5 legal-wrap">
     <header class="page-header">
         <h1><i class="bi bi-shield-check"></i> Informations légales</h1>
