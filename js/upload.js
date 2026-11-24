@@ -62,7 +62,7 @@ class UploadItem {
         this.index = index;
         this.folderId = folderId || 0;
         this.isPublic = false;
-        this.id = Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        this.id = Array.from(crypto.getRandomValues(new Uint8Array(16)), byte => byte.toString(16).padStart(2, '0')).join('');
         this.totalChunks = Math.ceil(file.size / CHUNK_SIZE);
         this.uploaded = 0;
         this.status = 'pending';
@@ -134,6 +134,7 @@ class UploadItem {
             'X-Folder-Id': this.folderId,
             'X-File-Size': this.file.size,
             'X-File-Public': this.isPublic ? '1' : '0',
+            'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content || '',
             'Content-Type': 'application/octet-stream',
         };
 
