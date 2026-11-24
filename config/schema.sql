@@ -71,6 +71,15 @@ CREATE TABLE IF NOT EXISTS share_access_log (
     INDEX idx_share_access_time (share_id, accessed_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- Limitation des erreurs de mot de passe sur les liens publics
+CREATE TABLE IF NOT EXISTS share_password_attempts (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    share_id INT NOT NULL,
+    ip_address VARCHAR(45) NOT NULL DEFAULT '',
+    attempted_at DATETIME NOT NULL,
+    INDEX idx_share_password_attempt (share_id, ip_address, attempted_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 -- Table des tentatives de connexion
 CREATE TABLE IF NOT EXISTS login_attempts (
     id INT AUTO_INCREMENT PRIMARY KEY,
