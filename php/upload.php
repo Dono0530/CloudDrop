@@ -7,6 +7,7 @@ require_once __DIR__ . '/../includes/FileManager.php';
 $fm = new FileManager();
 $folders = $fm->getFolders($_SESSION['user_id']);
 $selectedFolder = (int)($_GET['folder'] ?? 0);
+$uploadsDisabled = !Auth::isAdmin() && SiteControl::settings()['uploads_disabled'] === '1';
 ?>
 <!DOCTYPE html>
 <html lang="fr" data-theme="light">
@@ -44,7 +45,12 @@ $selectedFolder = (int)($_GET['folder'] ?? 0);
         <p>Glissez-déposez vos fichiers ou cliquez pour les sélectionner</p>
     </div>
 
-    <div class="card-modern fade-in fade-in-delay-1">
+    <div id="uploadDisabledNotice" class="alert-modern alert-warning-modern mb-4" role="status" <?= $uploadsDisabled ? '' : 'hidden' ?>>
+        <i class="bi bi-pause-circle-fill"></i>
+        <div><strong>Uploads temporairement désactivés.</strong> L’envoi reprendra lorsque l’administrateur les réactivera.</div>
+    </div>
+
+    <div class="card-modern fade-in fade-in-delay-1" data-uploads-disabled="<?= $uploadsDisabled ? '1' : '0' ?>">
         <div class="card-body-modern">
             <!-- Sélecteur de dossier -->
             <?php if (!empty($folders)): ?>
@@ -127,7 +133,7 @@ $selectedFolder = (int)($_GET['folder'] ?? 0);
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="/js/theme.js"></script>
-<script src="/js/upload.js"></script>
+<script src="/js/upload.js?v=20261124-2"></script>
 <?php require __DIR__ . '/../includes/SiteFooter.php'; ?>
 </body>
 </html>
