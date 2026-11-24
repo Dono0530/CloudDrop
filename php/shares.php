@@ -20,7 +20,7 @@ $durations = [1 => '1 heure', 24 => '24 heures', 168 => '7 jours', 720 => '30 jo
     <title>Mes liens de partage - CloudDrop</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="/css/modern.css?v=20261124">
+    <link rel="stylesheet" href="/css/modern.css?v=20261124-4">
     <style>
         .share-link-row { min-width: 250px; }
         .share-link-row code { overflow-wrap:anywhere; }
@@ -30,20 +30,7 @@ $durations = [1 => '1 heure', 24 => '24 heures', 168 => '7 jours', 720 => '30 jo
     </style>
 </head>
 <body>
-<nav class="navbar-drive">
-    <div class="container-fluid px-4">
-        <a class="navbar-brand" href="/index.php"><i class="bi bi-cloud-fill"></i> CloudDrop</a>
-        <div class="d-flex align-items-center gap-2">
-            <a href="/php/dashboard.php" class="nav-link"><i class="bi bi-speedometer2"></i> Dashboard</a>
-            <a href="/php/upload.php" class="nav-link"><i class="bi bi-cloud-arrow-up"></i> Upload</a>
-            <a href="/php/download.php" class="nav-link"><i class="bi bi-folder2-open"></i> Fichiers</a>
-            <a href="/php/shares.php" class="nav-link active"><i class="bi bi-link-45deg"></i> Mes liens</a>
-            <a href="/php/profile.php" class="nav-link"><i class="bi bi-person"></i> Profil</a>
-            <?php if (Auth::isAdmin()): ?><a href="/admin/index.php" class="nav-link"><i class="bi bi-shield-lock"></i> Admin</a><?php endif; ?>
-            <a href="/auth/logout.php" class="nav-link nav-link-cta"><i class="bi bi-box-arrow-right"></i> Déconnexion</a>
-        </div>
-    </div>
-</nav>
+<?php require __DIR__ . '/../includes/SiteHeader.php'; ?>
 <main class="container-fluid px-4 py-4">
     <div class="page-header fade-in">
         <h1><i class="bi bi-link-45deg"></i> Mes liens de partage</h1>
