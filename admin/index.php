@@ -332,8 +332,21 @@ $controls = $siteControl->settings();
                                     <div style="font-weight:600;"><?= htmlspecialchars($u['pseudo'], ENT_QUOTES, 'UTF-8') ?></div>
                                     <span class="badge-modern badge-danger"><?= empty($u['banned_until']) ? 'Permanent' : 'Temporaire' ?></span>
                                 </td>
-                                <td><?= htmlspecialchars(SiteControl::banTimeRemaining($u['banned_until'] ?? null), ENT_QUOTES, 'UTF-8') ?></td>
-                                <td><?= htmlspecialchars($u['ban_reason'] ?? 'Aucun motif indiqué', ENT_QUOTES, 'UTF-8') ?></td>
+                                <td>
+                                    <?php if (empty($u['banned_until'])): ?>
+                                        <span class="badge-modern badge-danger">Permanent · aucune date de fin</span>
+                                    <?php else: ?>
+                                        <strong>Date de fin : <?= htmlspecialchars($u['ban_until_display'] ?? $u['banned_until'], ENT_QUOTES, 'UTF-8') ?></strong>
+                                        <div style="font-size:.8rem;color:var(--text-muted);">
+                                            Temps restant : <?= htmlspecialchars(SiteControl::banTimeRemaining(
+                                                $u['banned_until'],
+                                                isset($u['ban_seconds_remaining']) ? (int)$u['ban_seconds_remaining'] : null,
+                                                $u['ban_until_display'] ?? null
+                                            ), ENT_QUOTES, 'UTF-8') ?>
+                                        </div>
+                                    <?php endif; ?>
+                                </td>
+                                <td><?= htmlspecialchars(trim((string)($u['ban_reason'] ?? '')) !== '' ? $u['ban_reason'] : 'Aucun motif indiqué', ENT_QUOTES, 'UTF-8') ?></td>
                                 <td>
                                     <form method="POST" class="d-flex flex-wrap gap-1 align-items-center mb-2">
                                         <?= Auth::csrfField() ?>
