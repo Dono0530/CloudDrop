@@ -59,10 +59,12 @@ if (in_array($ext, DANGEROUS_EXTENSIONS)) {
 
 // Téléchargement
 $fileSize = filesize($realPath);
-$displayName = isset($file['original_name']) ? $file['original_name'] : basename($realPath);
+$displayName = isset($file['original_name']) ? (string)$file['original_name'] : basename($realPath);
+$displayName = str_replace(["\\r", "\\n", "\\0"], '', $displayName);
+$asciiFileName = preg_replace('/[^A-Za-z0-9._ -]/', '_', $displayName) ?: 'download';
 
 header('Content-Type: application/octet-stream');
-header('Content-Disposition: attachment; filename="' . str_replace('"', '', $displayName) . '"');
+header("Content-Disposition: attachment; filename=\"$asciiFileName\"; filename*=UTF-8''" . rawurlencode($displayName));
 header('Content-Length: ' . $fileSize);
 header('Cache-Control: no-cache, must-revalidate');
 header('Pragma: no-cache');
