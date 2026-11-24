@@ -13,6 +13,9 @@ $success = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!Auth::validateCsrf($_POST[CSRF_TOKEN_NAME] ?? '')) {
         $error = 'Jeton de sécurité invalide. Rechargez la page.';
+    } elseif (defined('TURNSTILE_ENABLED') && TURNSTILE_ENABLED
+        && !Auth::verifyTurnstile($_POST['cf-turnstile-response'] ?? '')) {
+        $error = 'Vérification anti-robot échouée. Veuillez réessayer.';
     } else {
         $username = trim($_POST['username'] ?? '');
         $password = $_POST['password'] ?? '';
@@ -74,7 +77,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="form-group-modern">
                     <label for="password">Mot de passe</label>
                     <input type="password" id="password" name="password" class="form-control-modern"
-                           placeholder="Minimum 8 caractères" required minlength="8"
+                           placeholder="Minimum 12 caractères" required minlength="12"
                            oninput="checkPasswordStrength(this.value)">
                     <div class="password-strength">
                         <div class="strength-bar" id="strengthBar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
@@ -87,6 +90,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <input type="password" id="confirm_password" name="confirm_password" class="form-control-modern"
                            placeholder="Retapez votre mot de passe" required minlength="8">
                 </div>
+
+                <?php if (defined('TURNSTILE_ENABLED') && TURNSTILE_ENABLED): ?>
+                <div class="turnstile-container" style="margin:1rem 0;display:flex;justify-content:center;">
+                    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+                    <div class="cf-turnstile" data-sitekey="<?= htmlspecialchars(TURNSTILE_SITE_KEY, ENT_QUOTES, 'UTF-8') ?>"></div>
+                </div>
+                <?php endif; ?>
 
                 <button type="submit" class="btn-modern btn-primary-modern btn-lg w-100" style="justify-content:center;">
                     <i class="bi bi-person-plus"></i> Créer mon compte
