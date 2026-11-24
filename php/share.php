@@ -156,7 +156,6 @@ document.querySelectorAll('.countdown').forEach(function(el) {
         text += hours + 'h ' + minutes + 'm ' + seconds + 's';
         el.textContent = text;
         if (diff < 3600000) el.classList.add('urgent');
-        requestAnimationFrame(update);
     }
     update();
     setInterval(update, 1000);
