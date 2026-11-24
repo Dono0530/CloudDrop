@@ -75,7 +75,6 @@ require_once __DIR__ . '/config/init.php';
         <p>Les adresses IP sont résolues à partir de l’en-tête Cloudflare uniquement lorsque la connexion réseau directe provient d’une plage proxy Cloudflare configurée par le site. Cloudflare et l’hébergeur peuvent traiter des données techniques pour transmettre et sécuriser les requêtes, selon leurs propres rôles et conditions.</p>
         <h3>Fondements et durée de conservation</h3>
         <p>Les données nécessaires au compte et au partage sont utilisées pour fournir les fonctionnalités demandées. Les journaux sont utilisés pour la sécurité et le suivi des liens. Les journaux applicatifs et les historiques de partage sont conservés jusqu’à 6 mois ; les essais de mot de passe incorrect sont purgés après 24 heures. Le compte et ses fichiers sont conservés jusqu’à leur suppression par l’utilisateur ou l’éditeur, sous réserve des copies de sauvegarde et obligations applicables.</p>
-        <p><strong>Configuration requise :</strong> planifiez l’exécution quotidienne de <code>php/maintenance/purge_logs.php</code> pour appliquer la purge des journaux.</p>
         <h3>Destinataires et services externes</h3>
         <p>Les données sont accessibles à l’exploitant et aux prestataires techniques nécessaires à l’hébergement et à la sécurité du service. Les pages chargent également des ressources Bootstrap, Bootstrap Icons et Google Fonts depuis des CDN tiers, qui reçoivent des données techniques de connexion du navigateur..</p>
         <h3>Vos droits</h3>
