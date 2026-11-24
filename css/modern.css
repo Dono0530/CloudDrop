@@ -138,6 +138,31 @@ body::before {
     color: #fff !important;
 }
 
+.site-nav-links { flex-wrap: wrap; justify-content: flex-end; }
+.site-footer {
+    padding: 1.25rem 1rem 1rem;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: .85rem;
+}
+.site-footer-links {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: .45rem 1rem;
+}
+.site-footer a { color: var(--primary); text-decoration: none; }
+.site-footer a:hover { text-decoration: underline; }
+.site-footer-copy { margin-top: .45rem; font-size: .78rem; opacity: .8; }
+@media (max-width: 768px) {
+    .navbar-drive > .container-fluid { align-items: flex-start !important; }
+    .navbar-drive .navbar-brand { padding-top: .35rem; }
+    .site-nav-links { width: 100%; justify-content: flex-start; gap: .2rem !important; }
+    .navbar-drive .nav-link { padding: .38rem .5rem !important; font-size: .8rem; }
+    .site-nav-links .btn-modern { padding: .35rem .65rem !important; }
+    .auth-page, .share-page { min-height: calc(100vh - 145px); }
+}
+
 /* ── CARDS ──────────────────────────────────────────────────── */
 .card-modern {
     background: rgba(255, 255, 255, 0.7);
