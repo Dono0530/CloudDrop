@@ -424,6 +424,8 @@ class FileManager {
     public function deleteShare(int $shareId, int $userId): bool {
         $share = $this->db->fetchOne("SELECT id FROM shares WHERE id = ? AND user_id = ?", [$shareId, $userId]);
         if (!$share) throw new Exception('Lien de partage introuvable');
+        $this->db->execute("DELETE FROM share_access_log WHERE share_id = ?", [$shareId]);
+        $this->db->execute("DELETE FROM share_password_attempts WHERE share_id = ?", [$shareId]);
         $this->db->execute("DELETE FROM shares WHERE id = ? AND user_id = ?", [$shareId, $userId]);
         return true;
     }
