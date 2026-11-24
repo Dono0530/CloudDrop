@@ -17,18 +17,9 @@ if (isset($_GET['share'])) {
     $file = $fm->getFileById($share['file_id']);
     if (!$file) render_error_page(404);
 
-    if (!empty($share['password_hash'])) {
-        $submittedPassword = $_POST['share_password'] ?? '';
-        $remoteIp = clouddrop_client_ip();
-        if ($fm->isSharePasswordRateLimited((int)$share['id'], $remoteIp)) {
-            render_error_page(429);
-        }
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !is_string($submittedPassword)
-            || !password_verify($submittedPassword, $share['password_hash'])) {
-            $fm->recordFailedSharePasswordAttempt((int)$share['id'], $remoteIp);
-            render_error_page(403);
-        }
-        $fm->clearSharePasswordAttempts((int)$share['id'], $remoteIp);
+    if (!empty($share['password_hash'])
+        && (int)($_SESSION['share_link_access'][(int)$share['id']] ?? 0) <= time()) {
+        render_error_page(403);
     }
 
     // Vérifier que le fichier résolu reste bien dans le dossier de stockage.
