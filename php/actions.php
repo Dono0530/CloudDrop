@@ -48,9 +48,11 @@ $referer = $_SERVER['HTTP_REFERER'] ?? '';
 $refererParts = $referer !== '' ? parse_url($referer) : false;
 if (is_array($refererParts) && isset($refererParts['path'])) {
     $refererPath = $refererParts['path'];
-    if (str_starts_with($refererPath, '/') && !str_starts_with($refererPath, '//') && !preg_match('/[\\r\\n]/', $refererPath)) {
+    $refererQuery = $refererParts['query'] ?? '';
+    if (str_starts_with($refererPath, '/') && !str_starts_with($refererPath, '//')
+        && strpbrk($refererPath . $refererQuery, "\r\n") === false) {
         $redirect = $refererPath;
-        if (isset($refererParts['query'])) $redirect .= '?' . $refererParts['query'];
+        if ($refererQuery !== '') $redirect .= '?' . $refererQuery;
     }
 }
 
