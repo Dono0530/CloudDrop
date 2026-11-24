@@ -164,6 +164,12 @@ class SiteControl {
             $safeTarget = htmlspecialchars($target, ENT_QUOTES, 'UTF-8');
             $safeLinkLabel = htmlspecialchars($linkLabel, ENT_QUOTES, 'UTF-8');
             $safeIcon = htmlspecialchars($icon, ENT_QUOTES, 'UTF-8');
+            ob_start();
+            require __DIR__ . '/SiteHeader.php';
+            $sharedHeader = ob_get_clean();
+            ob_start();
+            require __DIR__ . '/SiteFooter.php';
+            $sharedFooter = ob_get_clean();
             echo '<!doctype html>
 <html lang="fr" data-theme="light">
 <head>
@@ -174,8 +180,8 @@ class SiteControl {
 <link rel="stylesheet" href="/css/modern.css?v=20261124-3">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 <style>
-.service-error-page{min-height:100vh;display:grid;place-items:center;padding:24px;background:radial-gradient(ellipse at 12% 0%,rgba(99,102,241,.16),transparent 42%),radial-gradient(ellipse at 100% 100%,rgba(6,182,212,.13),transparent 40%),var(--light,#f8fafc);color:var(--text,#1e293b);font-family:Inter,system-ui,sans-serif}
-.service-error-card{width:min(100%,650px);padding:clamp(28px,6vw,52px);border:1px solid var(--border,#e2e8f0);border-radius:24px;background:rgba(255,255,255,.92);box-shadow:0 24px 70px rgba(15,23,42,.12);text-align:center}
+.service-error-page{min-height:100vh;display:flex;flex-direction:column;padding:0;background:radial-gradient(ellipse at 12% 0%,rgba(99,102,241,.16),transparent 42%),radial-gradient(ellipse at 100% 100%,rgba(6,182,212,.13),transparent 40%),var(--light,#f8fafc);color:var(--text,#1e293b);font-family:Inter,system-ui,sans-serif}
+.service-error-card{width:min(calc(100% - 32px),650px);margin:auto;padding:clamp(28px,6vw,52px);border:1px solid var(--border,#e2e8f0);border-radius:24px;background:rgba(255,255,255,.92);box-shadow:0 24px 70px rgba(15,23,42,.12);text-align:center}
 .service-error-logo{display:inline-flex;align-items:center;gap:9px;margin-bottom:32px;color:#6366f1;font-size:1rem;font-weight:750}
 .service-error-icon{width:76px;height:76px;margin:0 auto 20px;display:grid;place-items:center;border-radius:24px;background:linear-gradient(135deg,#6366f1,#06b6d4);color:white;font-size:30px;box-shadow:0 12px 28px rgba(99,102,241,.25)}
 .service-error-code{margin:0;color:#6366f1;font-size:clamp(3.5rem,12vw,6rem);font-weight:850;line-height:1;letter-spacing:-.07em}
@@ -192,9 +198,8 @@ class SiteControl {
 [data-theme="dark"] .service-error-secondary{color:#f1f5f9;border-color:#475569}
 </style>
 </head>
-<body class="service-error-page">
+<body class="service-error-page">' . $sharedHeader . "\n" . '
 <main class="service-error-card">
-<a class="service-error-logo" href="/index.php"><i class="bi bi-cloud-fill"></i> CloudDrop</a>
 <div class="service-error-icon" aria-hidden="true"><i class="bi ' . $safeIcon . '"></i></div>
 <p class="service-error-code">' . $status . '</p>
 <h1>' . $safeTitle . '</h1>
@@ -203,9 +208,8 @@ class SiteControl {
 <a class="service-error-primary" href="' . $safeTarget . '"><i class="bi bi-arrow-left"></i> ' . $safeLinkLabel . '</a>
 <a class="service-error-secondary" href="/legal.php"><i class="bi bi-info-circle"></i> Informations du service</a>
 </div>
-<div class="service-error-footer">CloudDrop · Service de fichiers privé</div>
 </main>
-<script src="/js/theme.js"></script>
+<script src="/js/theme.js"></script>' . $sharedFooter . "\n" . '
 </body>
 </html>';
         }
