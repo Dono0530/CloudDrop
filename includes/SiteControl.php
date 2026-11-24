@@ -58,11 +58,36 @@ class SiteControl {
         }
     }
 
+    public static function banTimeRemaining(?string $bannedUntil): string {
+        if ($bannedUntil === null || $bannedUntil === '') return 'sans date de fin';
+        $seconds = max(0, strtotime($bannedUntil) - time());
+        if ($seconds <= 0) return 'bannissement expiré';
+        $days = intdiv($seconds, 86400);
+        $hours = intdiv($seconds % 86400, 3600);
+        $minutes = intdiv($seconds % 3600, 60);
+        $parts = [];
+        if ($days > 0) $parts[] = $days . ' j';
+        if ($hours > 0) $parts[] = $hours . ' h';
+        if ($minutes > 0 || !$parts) $parts[] = max(1, $minutes) . ' min';
+        return 'fin le ' . date('d/m/Y à H:i', strtotime($bannedUntil)) . ' · reste ' . implode(' ', $parts);
+    }
+
+    public static function formatBanMessage(array $ban, bool $includeReason = false): string {
+        $until = $ban['banned_until'] ?? null;
+        $message = $until === null
+            ? 'Ce compte est suspendu sans date de fin.'
+            : 'Ce compte est suspendu : ' . self::banTimeRemaining((string)$until) . '.';
+        if ($includeReason && !empty($ban['ban_reason'])) $message .= ' Motif : ' . (string)$ban['ban_reason'];
+        return $message;
+    }
+
     public static function enforceRequestPolicy(): void {
         $path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
         $isAdmin = ($_SESSION['user_role'] ?? '') === 'admin';
         if (!$isAdmin && !empty($_SESSION['user_id'])) {
-            if (self::isUserBanned((int)$_SESSION['user_id'])) {
+            $ban = self::isUserBanned((int)$_SESSION['user_id']);
+            if ($ban) {
+                $_SESSION['ban_notice'] = self::formatBanMessage($ban);
                 foreach (['user_id', 'username', 'user_role', 'logged_in', 'login_time', 'last_regeneration'] as $key) unset($_SESSION[$key]);
                 if (session_status() === PHP_SESSION_ACTIVE) session_regenerate_id(true);
             }
