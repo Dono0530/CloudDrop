@@ -23,6 +23,8 @@ CloudDrop est une application PHP/MySQL de dépôt et de partage de fichiers. El
 - Page Mes liens : durée, mot de passe facultatif, nombre maximal de téléchargements, aperçu et historique.
 - Aperçu de formats courants : images, vidéo, audio, PDF et fichiers texte.
 - Pages d'erreur stylisées, thème clair/sombre et informations légales.
+- Panneau admin : bannissements temporaires ou permanents, journal des actions et commandes de disponibilité du site.
+- Contrôles centralisés : mode maintenance avec accès admin, blocage indépendant des uploads et des téléchargements/aperçus.
 
 ## Prérequis
 
@@ -101,7 +103,7 @@ Pour mettre à jour une base existante, sélectionnez d'abord la bonne base et e
 mysql -u UTILISATEUR -p NOM_BASE < config/migrate_all.sql
 ~~~
 
-Cette migration vérifie chaque colonne et table avant de l'ajouter. Elle peut donc être relancée sans dupliquer les éléments déjà présents. Elle couvre la visibilité des fichiers, les protections des liens, les journaux d'aperçu et la limitation des essais de mot de passe.
+Cette migration vérifie chaque colonne et table avant de l'ajouter. Elle peut donc être relancée sans dupliquer les éléments déjà présents. Elle couvre la visibilité des fichiers, les protections des liens, les journaux d'aperçu, la limitation des essais de mot de passe, les bannissements et les réglages du site.
 
 Avec phpMyAdmin, sélectionnez la base puis importez config/migrate_all.sql. Ne lancez pas simultanément les anciennes migrations individuelles.
 
@@ -152,6 +154,8 @@ Remplacez les chemins par ceux de votre hébergeur. Sur cPanel, créez une tâch
 Sauvegardez régulièrement la base et les fichiers téléversés, et protégez ces sauvegardes.
 
 ## Compte administrateur
+
+Dans l'onglet Utilisateurs du panneau d'administration, un administrateur peut suspendre un compte standard pour 1 heure, 24 heures, 7 jours, 30 jours ou définitivement, avec un motif facultatif, puis lever le bannissement. L'onglet Contrôle du site permet d'activer la maintenance (les admins gardent l'accès), de bloquer les uploads ou de bloquer les téléchargements et aperçus. Ces actions sont consignées dans l'activité.
 
 Après inscription, attribuez le rôle admin depuis une session SQL protégée :
 
