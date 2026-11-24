@@ -65,6 +65,7 @@ CREATE TABLE IF NOT EXISTS shares (
 CREATE TABLE IF NOT EXISTS share_access_log (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     share_id INT NOT NULL,
+    access_type ENUM('download', 'preview') NOT NULL DEFAULT 'download',
     accessed_at DATETIME NOT NULL,
     ip_address VARCHAR(45) NOT NULL DEFAULT '',
     user_agent VARCHAR(255) NOT NULL DEFAULT '',
