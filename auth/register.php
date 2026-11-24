@@ -131,6 +131,7 @@ function checkPasswordStrength(password) {
     text.style.color = level.color ? color : 'var(--text-muted)';
 }
 </script>
+<?php require __DIR__ . '/../includes/SiteFooter.php'; ?>
 </body>
 </html>
 
