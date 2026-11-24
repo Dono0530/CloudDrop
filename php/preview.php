@@ -28,7 +28,7 @@ $type = FileManager::getPreviewType($ext);
 if ($type === 'none') { header('Location: /php/download_file.php?id=' . $fileId); exit; }
 
 $filePath = UPLOAD_DIR . $file['filename'];
-if (!file_exists($filePath)) { http_response_code(404); die('Fichier physique introuvable'); }
+if (!file_exists($filePath)) { render_error_page(404); }
 
 // Servir le fichier via PHP (pas d'accès direct /uploads/)
 $fileUrl = '/php/preview_serve.php?id=' . $fileId;
