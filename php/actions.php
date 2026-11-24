@@ -17,9 +17,17 @@ if (isset($_GET['share'])) {
     $file = $fm->getFileById($share['file_id']);
     if (!$file) { http_response_code(404); die('Fichier supprimé'); }
 
-    // Servir le fichier
-    $filePath = UPLOAD_DIR . $file['filename'];
-    if (!file_exists($filePath)) { http_response_code(404); die('Fichier introuvable'); }
+    // Vérifier que le fichier résolu reste bien dans le dossier de stockage.
+    $uploadDirectory = realpath(UPLOAD_DIR);
+    $safeFilename = basename((string)$file['filename']);
+    $filePath = $uploadDirectory !== false
+        ? realpath($uploadDirectory . DIRECTORY_SEPARATOR . $safeFilename)
+        : false;
+    if ($filePath === false || !is_file($filePath)
+        || strpos($filePath, $uploadDirectory . DIRECTORY_SEPARATOR) !== 0) {
+        http_response_code(404);
+        die('Fichier introuvable');
+    }
 
     $ext = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
     if (in_array($ext, DANGEROUS_EXTENSIONS)) { http_response_code(403); die('Type non autorisé'); }
@@ -29,6 +37,8 @@ if (isset($_GET['share'])) {
     header('Content-Type: application/octet-stream');
     header("Content-Disposition: attachment; filename=\"$asciiFileName\"; filename*=UTF-8''" . rawurlencode($displayName));
     header('Content-Length: ' . filesize($filePath));
+    header('Cache-Control: private, no-store');
+    header('X-Content-Type-Options: nosniff');
     readfile($filePath);
     exit;
 }
