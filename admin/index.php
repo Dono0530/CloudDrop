@@ -26,7 +26,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $db->execute("DELETE FROM users WHERE id = ?", [$uid]);
                     $flashSuccess = 'Utilisateur supprimé.';
                 }
-            } elseif ($action === 'ban_user') {
+            } elseif ($action === 'ban_user' || $action === 'change_ban') {
                 $uid = (int)($_POST['user_id'] ?? 0);
                 $target = Database::getInstance()->fetchOne('SELECT id, role FROM users WHERE id = ?', [$uid]);
                 $duration = (string)($_POST['duration'] ?? '');
@@ -46,7 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         'INSERT INTO activity_log (user_id, action, details, ip_address, created_at) VALUES (?, ?, ?, ?, NOW())',
                         [(int)$_SESSION['user_id'], 'admin_user_ban', 'Bannissement de l’utilisateur #' . $uid . ($reason !== '' ? ' : ' . $reason : ''), clouddrop_client_ip()]
                     );
-                    $flashSuccess = $seconds > 0 ? 'Bannissement temporaire appliqué.' : 'Bannissement permanent appliqué.';
+                    $flashSuccess = $action === 'change_ban' ? 'Bannissement modifié.' : ($seconds > 0 ? 'Bannissement temporaire appliqué.' : 'Bannissement permanent appliqué.');
                 }
             } elseif ($action === 'unban_user') {
                 $uid = (int)($_POST['user_id'] ?? 0);
@@ -217,7 +217,8 @@ $controls = $siteControl->settings();
                             <td>
                                 <?php if ($userBanned): ?>
                                     <span class="badge-modern badge-danger"><?= empty($u['banned_until']) ? 'Banni définitivement' : 'Banni temporairement' ?></span>
-                                    <?php if (!empty($u['ban_reason'])): ?><div style="font-size:.75rem;color:var(--text-muted);"><?= htmlspecialchars($u['ban_reason']) ?></div><?php endif; ?>
+                                    <div style="font-size:.8rem;color:var(--text-muted);"><?= htmlspecialchars(SiteControl::banTimeRemaining($u['banned_until'] ?? null), ENT_QUOTES, 'UTF-8') ?></div>
+                                    <?php if (!empty($u['ban_reason'])): ?><div style="font-size:.75rem;color:var(--text-muted);">Motif : <?= htmlspecialchars($u['ban_reason'], ENT_QUOTES, 'UTF-8') ?></div><?php endif; ?>
                                 <?php else: ?><span class="badge-modern badge-success">Actif</span><?php endif; ?>
                             </td>
                             <td><?= $u['file_count'] ?></td>
@@ -225,6 +226,18 @@ $controls = $siteControl->settings();
                             <td>
                                 <?php if ($u['role'] === 'user'): ?>
                                     <?php if ($userBanned): ?>
+                                        <form method="POST" class="d-flex flex-wrap gap-1 align-items-center mb-1">
+                                            <?= Auth::csrfField() ?>
+                                            <input type="hidden" name="action" value="change_ban">
+                                            <input type="hidden" name="user_id" value="<?= (int)$u['id'] ?>">
+                                            <select name="duration" class="form-control-modern" style="width:auto;padding:.35rem;" required>
+                                                <option value="3600">Nouvelle durée : 1 heure</option><option value="86400">Nouvelle durée : 24 heures</option>
+                                                <option value="604800">Nouvelle durée : 7 jours</option><option value="2592000">Nouvelle durée : 30 jours</option>
+                                                <option value="permanent">Permanent</option>
+                                            </select>
+                                            <input type="text" name="ban_reason" class="form-control-modern" maxlength="255" value="<?= htmlspecialchars($u['ban_reason'] ?? '', ENT_QUOTES, 'UTF-8') ?>" placeholder="Motif (facultatif)" style="width:170px;padding:.35rem;">
+                                            <button type="submit" class="btn-modern btn-outline-modern btn-sm" onclick="return confirm('Modifier le bannissement de cet utilisateur ?');"><i class="bi bi-pencil-square"></i> Modifier</button>
+                                        </form>
                                         <form method="POST" style="display:inline;">
                                             <?= Auth::csrfField() ?>
                                             <input type="hidden" name="action" value="unban_user">
