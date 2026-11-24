@@ -21,7 +21,7 @@ function render_error_page(int $statusCode): void {
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="robots" content="noindex, nofollow">
         <title><?= $statusCode ?> · <?= htmlspecialchars($page['title'], ENT_QUOTES, 'UTF-8') ?> — CloudDrop</title>
-        <link href="/css/modern.css" rel="stylesheet">
+        <link href="/css/modern.css?v=20261124" rel="stylesheet">
         <style>
             body.error-page { min-height:100vh; margin:0; display:grid; place-items:center; padding:24px; background:radial-gradient(ellipse at top left,#e0e7ff 0,transparent 45%),radial-gradient(ellipse at bottom right,#cffafe 0,transparent 42%),#f8fafc; color:#0f172a; font-family:Inter,system-ui,sans-serif; }
             .error-card { width:min(100%,620px); padding:clamp(28px,6vw,56px); border:1px solid rgba(148,163,184,.25); border-radius:28px; background:rgba(255,255,255,.88); box-shadow:0 24px 80px rgba(15,23,42,.12); text-align:center; }
