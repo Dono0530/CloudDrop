@@ -41,22 +41,20 @@ require_once __DIR__ . '/config/init.php';
         <p>Mentions légales, conditions d’utilisation et confidentialité · Mise à jour : 24 novembre 2026</p>
     </header>
 
-    <div class="alert alert-warning" role="alert">
-        <strong>À compléter avant de rendre le site public :</strong> les champs surlignés sont des informations obligatoires à fournir par l’exploitant. Les mentions ci-dessous décrivent le fonctionnement connu de CloudDrop, mais ne remplacent pas une vérification juridique adaptée à l’activité réelle.
+    <div class="alert alert-info" role="note">
+        CloudDrop est un projet personnel auto-hébergé, sans société déclarée. Les informations publiées ci-dessous identifient le service et son hébergement sans afficher d’adresse personnelle. L’anonymat public d’un éditeur non professionnel est soumis aux conditions prévues par la loi, notamment la communication de son identité à l’hébergeur.
     </div>
 
     <section class="card-modern legal-card"><div class="card-body-modern">
         <h2>Éditeur du site</h2>
         <p>Nom du site : CloudDrop<br>
         Adresse du site : <span class="legal-placeholder">[à compléter : URL du site]</span><br>
-        Responsable de publication : <span class="legal-placeholder">[à compléter : nom et prénom ou raison sociale]</span><br>
-        Adresse : <span class="legal-placeholder">[à compléter : adresse professionnelle ou adresse requise selon le statut]</span><br>
-        Contact : <span class="legal-placeholder">[à compléter : adresse e-mail de contact]</span><br>
-        Identifiant d’entreprise : <span class="legal-placeholder">[à compléter si applicable : SIREN/SIRET]</span></p>
+        Responsable de publication : éditeur non professionnel (identité communiquée à l’hébergeur, lorsque cette option légale est applicable)<br>
+        Contact : via le formulaire ou l’adresse de contact du site<br>
+        Statut : projet personnel, sans société déclarée</p>
         <h3>Hébergement</h3>
-        <p>Hébergeur : <span class="legal-placeholder">[à compléter : nom de l’hébergeur]</span><br>
-        Adresse : <span class="legal-placeholder">[à compléter : adresse de l’hébergeur]</span><br>
-        Contact de l’hébergeur : <span class="legal-placeholder">[à compléter : coordonnées ou URL de contact]</span></p>
+        <p>Hébergeur : <span class="legal-placeholder">[à renseigner : fournisseur du serveur ou du centre de données]</span><br>
+        Adresse et contact : consulter les coordonnées officielles publiées par cet hébergeur</p>
     </div></section>
 
     <section class="card-modern legal-card"><div class="card-body-modern">
@@ -73,7 +71,7 @@ require_once __DIR__ . '/config/init.php';
 
     <section class="card-modern legal-card"><div class="card-body-modern">
         <h2>Confidentialité et données personnelles</h2>
-        <p>Responsable du traitement : <span class="legal-placeholder">[à compléter : identité et contact de l’éditeur]</span>.</p>
+        <p>Responsable du traitement : l’éditeur du projet CloudDrop. Pour exercer vos droits, contactez l’éditeur via le moyen de contact indiqué sur le site. L’identité complète du responsable doit être communiquée aux personnes concernées sur demande et dans les conditions prévues par la réglementation applicable.</p>
         <h3>Données utilisées et finalités</h3>
         <ul>
             <li>Compte : pseudo et empreinte du mot de passe, pour créer et sécuriser l’accès.</li>
@@ -87,7 +85,7 @@ require_once __DIR__ . '/config/init.php';
         <h3>Destinataires et services externes</h3>
         <p>Les données sont accessibles à l’exploitant et aux prestataires techniques nécessaires à l’hébergement et à la sécurité du service. Les pages chargent également des ressources Bootstrap, Bootstrap Icons et Google Fonts depuis des CDN tiers, qui reçoivent des données techniques de connexion du navigateur. <span class="legal-placeholder">[à compléter : confirmer les prestataires réellement activés, leurs pays de traitement et les éventuels transferts hors EEE]</span>.</p>
         <h3>Vos droits</h3>
-        <p>Selon les règles applicables, vous pouvez demander l’accès, la rectification, l’effacement, la limitation ou vous opposer à certains traitements. Écrivez à <span class="legal-placeholder">[à compléter : adresse de contact dédiée]</span>. Vous pouvez aussi adresser une réclamation à la CNIL. Les demandes nécessitent de vérifier raisonnablement l’identité du demandeur.</p>
+        <p>Selon les règles applicables, vous pouvez demander l’accès, la rectification, l’effacement, la limitation ou vous opposer à certains traitements. Écrivez à le moyen de contact indiqué sur le site. Vous pouvez aussi adresser une réclamation à la CNIL. Les demandes nécessitent de vérifier raisonnablement l’identité du demandeur.</p>
         <p>CloudDrop utilise un cookie de session nécessaire à la connexion et le stockage local du navigateur pour mémoriser le thème d’affichage. Aucun cookie publicitaire n’est volontairement configuré par l’application.</p>
     </div></section>
     <p style="font-size:.85rem;color:var(--text-muted);">Pour les informations officielles sur les mentions légales et la protection des données, consultez la <a href="https://www.cnil.fr/fr/cnil-direct/question/les-mentions-legales-sur-un-site-web-est-ce-obligatoire" rel="noopener noreferrer">CNIL</a>.</p>
