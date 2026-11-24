@@ -336,6 +336,34 @@ class FileManager {
         return true;
     }
 
+    public function isSharePasswordRateLimited(int $shareId, string $ipAddress): bool {
+        $attempts = $this->db->fetchOne(
+            "SELECT COUNT(*) AS total FROM share_password_attempts
+             WHERE share_id = ? AND ip_address = ?
+               AND attempted_at > DATE_SUB(NOW(), INTERVAL 15 MINUTE)",
+            [$shareId, substr($ipAddress, 0, 45)]
+        );
+        return (int)($attempts['total'] ?? 0) >= 5;
+    }
+
+    public function recordFailedSharePasswordAttempt(int $shareId, string $ipAddress): void {
+        $ipAddress = substr($ipAddress, 0, 45);
+        $this->db->execute(
+            "DELETE FROM share_password_attempts WHERE attempted_at < DATE_SUB(NOW(), INTERVAL 1 DAY)"
+        );
+        $this->db->execute(
+            "INSERT INTO share_password_attempts (share_id, ip_address, attempted_at) VALUES (?, ?, NOW())",
+            [$shareId, $ipAddress]
+        );
+    }
+
+    public function clearSharePasswordAttempts(int $shareId, string $ipAddress): void {
+        $this->db->execute(
+            "DELETE FROM share_password_attempts WHERE share_id = ? AND ip_address = ?",
+            [$shareId, substr($ipAddress, 0, 45)]
+        );
+    }
+
     public function recordShareDownload(int $shareId, string $ipAddress, string $userAgent): bool {
         $updated = $this->db->execute(
             "UPDATE shares SET download_count = download_count + 1
