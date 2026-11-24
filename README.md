@@ -1,192 +1,179 @@
-# ☁️ CloudDrop
+# CloudDrop
 
-Plateforme de partage de fichiers sécurisée — comme un Google Drive partagé entre utilisateurs.
+CloudDrop est une application PHP/MySQL de dépôt et de partage de fichiers. Elle propose des comptes utilisateur, des dossiers, des fichiers publics ou privés, des liens de partage contrôlables et l'aperçu de certains formats.
 
-![PHP](https://img.shields.io/badge/PHP-8.2+-777BB4?style=flat&logo=php&logoColor=white)
-![MySQL](https://img.shields.io/badge/MySQL-8.0+-4479A1?style=flat&logo=mysql&logoColor=white)
-![Bootstrap](https://img.shields.io/badge/Bootstrap-5.3-7952B3?style=flat&logo=bootstrap&logoColor=white)
-![License](https://img.shields.io/badge/License-MIT-green)
+## Sommaire
+
+- Fonctionnalités
+- Prérequis
+- Installation neuve
+- Mise à jour d'une installation existante
+- Utilisation
+- Cloudflare et adresses IP
+- Confidentialité et maintenance
+- Compte administrateur
+- Dépannage
+- Développement
 
 ## Fonctionnalités
 
-### Upload
-- Drag & drop multi-fichiers
-- Upload par morceaux (chunks de 10 Mo) — fichiers jusqu'à 100 Go
-- Progression temps réel avec débit et ETA
-- Choix du dossier de destination
-- Choix privé/public pour chaque transfert (public : affiché sur l’accueil et téléchargeable sans compte)
-- Retry automatique en cas d'échec
+- Inscription, connexion, gestion du profil et rôles utilisateur/administrateur.
+- Upload par morceaux, choix d'un dossier et visibilité publique ou privée.
+- Dossiers partagés : seuls les fichiers publics d'un dossier sont visibles aux autres utilisateurs.
+- Page Mes liens : durée, mot de passe facultatif, nombre maximal de téléchargements, aperçu et historique.
+- Aperçu de formats courants : images, vidéo, audio, PDF et fichiers texte.
+- Pages d'erreur stylisées, thème clair/sombre et informations légales.
 
-### Fichiers
-- Recherche, filtres par type/date/taille, pagination
-- Dossiers partagés pour organiser les fichiers
-- Créer et supprimer des dossiers
-- Déplacer des fichiers entre dossiers
-- Aperçu : images, PDF, vidéo, audio, code/texte
-- Partage par lien avec expiration (1h, 24h, 7j, 30j)
-- Page de partage dédiée : nom de l'uploader, taille, compte à rebours d'expiration, bouton de téléchargement
+## Prérequis
 
-### Sécurité
-- Hash bcrypt (cost 12) avec rehash automatique
-- Tokens CSRF sur tous les formulaires
-- Protection brute-force (5 tentatives → verrouillage 15 min)
-- Sessions sécurisées (HttpOnly, SameSite, régénération d'ID)
-- Blocage des extensions dangereuses (.exe, .php, etc.)
-- Protection path traversal
-- Cloudflare Turnstile sur la page de connexion (activable/désactivable via config)
+- PHP 8.0 ou plus récent.
+- MySQL ou MariaDB avec InnoDB.
+- Extensions PHP PDO, pdo_mysql et fileinfo.
+- Apache avec prise en charge de .htaccess et AllowOverride activé. Nginx nécessite des règles équivalentes configurées dans son serveur.
+- HTTPS recommandé pour tout déploiement public.
+- Pour Cloudflare : zone proxifiée et configuration de l'hébergement afin que l'origine ne soit joignable que via Cloudflare.
 
-### Interface
-- Design glassmorphism avec gradients
-- Mode clair/sombre auto-détecté
-- Bootstrap 5 + Bootstrap Icons
-- Animations fluides, responsive
-- Toast notifications
+## Installation neuve
 
-### Administration
-- Gestion des fichiers et utilisateurs
-- Journal d'activité détaillé
-- Statistiques globales
-- Suppression de comptes
+### 1. Récupérer le projet
 
-## Installation
+Déployez le dépôt dans le dossier servi par l'hébergement. La branche dev contient les améliorations en cours ; main est la branche de production.
 
-### Prérequis
-- PHP 8.2+
-- MySQL 8.0+
-- Apache avec mod_rewrite
+Avec Git :
 
-### Étapes
+~~~bash
+git clone --branch dev https://github.com/Dono0530/CloudDrop.git
+cd CloudDrop
+~~~
 
-```bash
-# 1. Cloner
-git clone https://github.com/votre-repo/clouddrop.git
-cd clouddrop
+Avec cPanel, clonez le dépôt via Git Version Control ou téléversez une archive de la branche choisie.
 
-# 2. Configurer
-cp config/config.example.php config/config.php
-# Éditer config/config.php avec vos paramètres DB
+### 2. Créer la base de données
 
-# 3. Créer la base de données
-mysql -u root -p -e "CREATE DATABASE clouddrop CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+Créez une base MySQL/MariaDB et un utilisateur avec des droits sur cette base. Importez le schéma :
 
-# 4. Importer le schéma
-mysql -u root -p clouddrop < config/schema.sql
+~~~bash
+mysql -u UTILISATEUR -p NOM_BASE < config/schema.sql
+~~~
 
-# 5. Créer les dossiers
+Vous pouvez également importer config/schema.sql avec phpMyAdmin.
+
+### 3. Configurer l'application
+
+Copiez config/config.example.php vers config/config.php, puis renseignez DB_HOST, DB_USER, DB_PASS et DB_NAME.
+
+Si Turnstile est activé, renseignez les clés Cloudflare. Pour un développement local sans clés, désactivez cette option dans la configuration. Ne publiez jamais config/config.php ni ses secrets dans Git.
+
+### 4. Préparer le stockage
+
+Le processus PHP doit pouvoir écrire dans uploads/ et uploads/temp/. Depuis la racine du projet :
+
+~~~bash
 mkdir -p uploads/temp
 chmod 755 uploads uploads/temp
+~~~
 
-# 6. Lancer
-# Avec XAMPP : démarrer Apache, aller sur http://localhost/
-# Avec PHP : php -S localhost:8000 -t . 
-```
+Adaptez le propriétaire et les permissions à l'utilisateur du serveur web. Évitez les permissions globales d'écriture.
 
-### Mise à jour d'une installation existante
+### 5. Configurer le serveur web
 
-Les fichiers restent privés par défaut. Pour ajouter la colonne de visibilité à une base existante, exécutez une seule fois :
+Faites pointer le domaine vers la racine du projet, activez HTTPS et vérifiez que le serveur applique les protections de .htaccess. Les fichiers déposés ne doivent pas être exécutables. Sous Nginx, bloquez également l'accès direct à uploads/, aux fichiers de configuration et aux scripts de maintenance.
 
-```bash
-mysql -u root -p clouddrop < config/migrate_file_visibility.sql
-```
+### 6. Premier démarrage
 
-Les nouvelles installations récupèrent déjà cette colonne depuis `config/schema.sql`.
+Ouvrez le domaine, créez un compte puis testez un petit fichier privé et un fichier public. Vérifiez les pages Fichiers et Mes liens.
 
-Pour activer la protection par mot de passe, les limites de téléchargements et l'historique des accès aux liens de partage, exécutez ensuite une seule fois :
+Pour le développement local avec le serveur PHP intégré :
 
-```bash
-mysql -u root -p clouddrop < config/migrate_share_security.sql
-```
+~~~bash
+php -S 127.0.0.1:8000 -t .
+~~~
 
-Cette migration ajoute les colonnes de sécurité et crée les tables d'historique et de limitation des tentatives de mot de passe. L'historique conserve l'adresse IP et le navigateur indiqués lors des téléchargements réussis ; révoquer un lien supprime aussi son historique.
+Ce serveur intégré est destiné au développement, pas à une mise en production publique.
 
-### Premier compte admin
+## Mise à jour d'une installation existante
 
-Après inscription, rendez-vous manuellement dans la base :
+Avant la mise à jour, sauvegardez la base, config/config.php et le dossier uploads/. Déployez le code de la branche choisie sans écraser la configuration ni les fichiers déposés.
 
-```sql
+Appliquez seulement les migrations qui ne sont pas encore présentes dans la base. Chaque migration qui ajoute des colonnes doit être exécutée une seule fois :
+
+~~~bash
+mysql -u UTILISATEUR -p NOM_BASE < config/migrate_file_visibility.sql
+mysql -u UTILISATEUR -p NOM_BASE < config/migrate_share_security.sql
+~~~
+
+- migrate_file_visibility.sql ajoute le choix public/privé.
+- migrate_share_security.sql ajoute les mots de passe, limites et journaux de partage.
+- Si migrate_share_security.sql avait déjà été exécutée avant l'ajout des aperçus, exécutez une fois config/migrate_share_preview_logs.sql pour ajouter le type d'événement aux journaux.
+- Une nouvelle installation importe schema.sql et n'exécute pas ces migrations ensuite.
+
+Une migration déjà appliquée peut échouer si elle est relancée. Vérifiez la structure de la base avant toute nouvelle tentative.
+
+## Utilisation
+
+### Fichiers et dossiers
+
+1. Créez un compte puis ouvrez Upload.
+2. Sélectionnez les fichiers, leur dossier de destination et leur visibilité.
+3. Un fichier privé est visible par son propriétaire et les administrateurs. Un fichier public peut être consulté et téléchargé sans compte.
+4. Dans Fichiers, vous pouvez ouvrir des dossiers, prévisualiser, télécharger, changer la visibilité, déplacer ou supprimer vos fichiers.
+
+### Liens de partage
+
+1. Depuis Fichiers, choisissez l'action de partage sur un fichier.
+2. Choisissez la durée, éventuellement un mot de passe d'au moins 8 caractères et une limite de téléchargements, ou Illimité.
+3. Copiez le lien et envoyez le mot de passe par un autre canal.
+4. Les visiteurs peuvent prévisualiser les formats pris en charge. Les aperçus sont journalisés séparément et ne consomment pas le quota de téléchargements.
+5. Ouvrez Mes liens pour consulter le temps restant, changer la durée ou la protection, consulter l'historique et révoquer le lien.
+
+Un lien est un secret : toute personne qui le possède peut l'utiliser tant qu'il n'est pas expiré ou révoqué. La limite compte les téléchargements réussis ; elle n'empêche pas la prévisualisation.
+
+### Visibilité des dossiers
+
+Un autre utilisateur voit un dossier seulement s'il contient au moins un fichier public. Il voit alors les fichiers publics du dossier, pas les fichiers privés des autres utilisateurs. Le nom du créateur du dossier est affiché.
+
+## Cloudflare et adresses IP
+
+Quand la connexion directe vient d'une plage officielle Cloudflare, CloudDrop utilise l'en-tête CF-Connecting-IP après validation de l'adresse du proxy. Si le pair réseau n'est pas dans une plage Cloudflare connue, l'application ignore cet en-tête et utilise REMOTE_ADDR, pour ne pas faire confiance à un en-tête falsifiable.
+
+Les plages IPv4 et IPv6 sont configurées dans config/init.php. Vérifiez-les périodiquement sur les listes officielles : https://www.cloudflare.com/ips-v4 et https://www.cloudflare.com/ips-v6. Pour masquer l'IP de l'origine, bloquez les connexions directes au serveur dans le pare-feu ou le panneau d'hébergement ; un proxy seul ne suffit pas si l'origine reste joignable.
+
+## Confidentialité et maintenance
+
+La page Informations légales décrit les traitements actuellement connus. Remplacez-y tous les champs « à compléter » avant l'ouverture au public. L'identité de l'éditeur, son contact et l'hébergeur doivent être renseignés.
+
+Les journaux d'accès aux liens incluent l'adresse IP et le navigateur. La tâche de maintenance purge les journaux applicatifs après 180 jours et les échecs de mot de passe après 24 heures. Configurez son lancement quotidien avec cron :
+
+~~~cron
+0 3 * * * /usr/bin/php /CHEMIN/ABSOLU/CloudDrop/php/maintenance/purge_logs.php
+~~~
+
+Remplacez les chemins par ceux de votre hébergeur. Sur cPanel, créez une tâche cron quotidienne. La suppression d'un lien supprime aussi son historique.
+
+Sauvegardez régulièrement la base et les fichiers téléversés, et protégez ces sauvegardes.
+
+## Compte administrateur
+
+Après inscription, attribuez le rôle admin depuis une session SQL protégée :
+
+~~~sql
 UPDATE users SET role = 'admin' WHERE pseudo = 'votre_pseudo';
-```
+~~~
 
-## Configuration
+Déconnectez-vous puis reconnectez-vous pour actualiser le rôle enregistré dans la session.
 
-### Cloudflare Turnstile
+## Dépannage
 
-Pour activer la vérification anti-robot sur la page de connexion, éditez `config/config.php` :
+- Erreur de base : vérifiez la configuration, les identifiants MySQL et les droits de l'utilisateur.
+- Upload refusé : vérifiez les droits d'écriture de uploads/ et uploads/temp/, les limites PHP et celles du proxy/hébergeur.
+- Lien protégé inaccessible : vérifiez le mot de passe, l'échéance, le quota et l'application des migrations.
+- Un lien expiré apparaît encore dans Mes liens : il reste listé pour permettre sa révocation ; son accès public est désactivé.
+- Les journaux montrent l'IP Cloudflare : assurez-vous que la requête arrive via Cloudflare et que les plages du code sont à jour. Ne faites pas confiance aveuglément à X-Forwarded-For.
+- Erreur 500 : consultez les journaux PHP, vérifiez les migrations et conservez config/config.php pendant le déploiement.
 
-```php
-define('TURNSTILE_ENABLED', true);  // true = activé, false = désactivé
-define('TURNSTILE_SITE_KEY', 'votre_site_key');
-define('TURNSTILE_SECRET_KEY', 'votre_secret_key');
-```
+## Développement
 
-Récupérez vos clés sur le [dashboard Cloudflare Turnstile](https://dash.cloudflare.com/?to=/:account/turnstile). Vous pouvez utiliser `localhost` comme domaine.
-
-### Fuseau horaire
-
-Le fuseau horaire est configuré sur `Europe/Paris` par défaut. Modifiez-le dans `config/init.php` :
-
-```php
-date_default_timezone_set('Europe/Paris');
-```
-
-## Structure
-
-```
-clouddrop/
-├── config/
-│   ├── config.php              # Configuration (DB, sécurité, uploads)
-│   ├── config.example.php      # Template de configuration
-│   ├── Database.php            # Connexion PDO singleton
-│   ├── init.php                # Sessions, sécurité, autoload
-│   └── schema.sql              # Schéma complet de la BDD
-├── includes/
-│   ├── Auth.php                # Login, register, CSRF, sessions
-│   └── FileManager.php         # CRUD fichiers, dossiers, partages
-├── auth/
-│   ├── login.php               # Page connexion
-│   ├── register.php            # Page inscription
-│   └── logout.php              # Déconnexion
-├── admin/
-│   ├── index.php               # Panel admin (fichiers, users, logs)
-│   └── upload_chunk.php        # Réception des chunks d'upload
-├── php/
-│   ├── dashboard.php           # Tableau de bord utilisateur
-│   ├── upload.php              # Upload avec drag & drop
-│   ├── download.php            # Liste fichiers + dossiers + recherche
-│   ├── download_file.php       # Téléchargement sécurisé
-│   ├── preview.php             # Aperçu de fichiers
-│   ├── preview_serve.php       # Service de fichiers pour aperçu
-│   ├── profile.php             # Profil utilisateur
-│   └── actions.php             # Handler POST (CRUD, partage, déplacer)
-├── css/
-│   └── modern.css              # Styles glassmorphism
-├── js/
-│   ├── theme.js                # Thème clair/sombre + toasts
-│   └── upload.js               # Upload chunked avec queue parallèle
-├── uploads/                    # Fichiers uploadés (git-ignoré)
-├── index.php                   # Page d'accueil
-├── .htaccess                   # Sécurité Apache
-└── .gitignore
-```
-
-## API
-
-L'upload utilise un endpoint JSON :
-
-```
-POST /admin/upload_chunk.php
-Content-Type: multipart/form-data
-
-chunk       : morceau du fichier (blob)
-chunkIndex  : index du chunk (0, 1, 2...)
-totalChunks : nombre total de chunks
-fileName    : nom original du fichier
-fileId      : identifiant unique (timestamp_random)
-folder_id   : ID du dossier de destination (0 = racine)
-
-Response: { "success": true, "complete": false, "chunkIndex": 0 }
-```
-
-## Licence
-
-MIT
+- main : production.
+- dev : intégration des changements.
+- config/ : exemples de configuration, schéma et migrations.
+- N'ajoutez aucun secret, configuration de production ou fichier téléversé au dépôt.
