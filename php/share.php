@@ -58,9 +58,26 @@ if (!$share) {
                     <span class="countdown" data-expires="<?= $share['expires_at'] ?>"></span>
                 </div>
 
-                <a href="/php/actions.php?share=<?= htmlspecialchars($token) ?>" class="btn-modern btn-primary-modern btn-lg w-100 share-download-btn">
-                    <i class="bi bi-download"></i> Télécharger le fichier
-                </a>
+                <?php if (!empty($share['password_hash'])): ?>
+                    <form method="POST" action="/php/actions.php?share=<?= rawurlencode($token) ?>">
+                        <div class="form-group-modern mb-3">
+                            <label for="sharePassword">Ce lien est protégé par un mot de passe</label>
+                            <input type="password" id="sharePassword" name="share_password" class="form-control-modern" required maxlength="128" autocomplete="current-password">
+                        </div>
+                        <button type="submit" class="btn-modern btn-primary-modern btn-lg w-100 share-download-btn">
+                            <i class="bi bi-download"></i> Vérifier et télécharger
+                        </button>
+                    </form>
+                <?php else: ?>
+                    <a href="/php/actions.php?share=<?= rawurlencode($token) ?>" class="btn-modern btn-primary-modern btn-lg w-100 share-download-btn">
+                        <i class="bi bi-download"></i> Télécharger le fichier
+                    </a>
+                <?php endif; ?>
+                <?php if (!empty($share['download_limit'])): ?>
+                    <p style="text-align:center;color:var(--text-muted);font-size:.85rem;margin-top:1rem;">
+                        Téléchargements restants : <?= max(0, (int)$share['download_limit'] - (int)$share['download_count']) ?> / <?= (int)$share['download_limit'] ?>
+                    </p>
+                <?php endif; ?>
             <?php endif; ?>
 
             <div class="share-footer">
