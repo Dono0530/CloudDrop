@@ -232,6 +232,44 @@ class FileManager {
         );
     }
 
+    public function getFoldersVisibleToUser(int $userId, bool $isAdmin = false): array {
+        $visibility = $isAdmin
+            ? ''
+            : 'WHERE f.user_id = ? OR EXISTS (
+                    SELECT 1 FROM files public_file
+                    WHERE public_file.folder_id = f.id
+                      AND public_file.deleted_at IS NULL
+                      AND public_file.is_public = 1
+                )';
+        $params = $isAdmin ? [] : [$userId];
+        $countVisibility = $isAdmin
+            ? 'folder_file.deleted_at IS NULL'
+            : '(folder_file.deleted_at IS NULL AND (f.user_id = ? OR folder_file.is_public = 1))';
+        if (!$isAdmin) $params[] = $userId;
+
+        return $this->db->fetchAll(
+            "SELECT f.*, u.pseudo AS owner_name,
+                    (SELECT COUNT(*) FROM files folder_file
+                     WHERE folder_file.folder_id = f.id AND $countVisibility) AS file_count
+             FROM folders f
+             LEFT JOIN users u ON u.id = f.user_id
+             $visibility
+             ORDER BY f.name ASC",
+            $params
+        );
+    }
+
+    public function canAccessFolder(array $folder, int $userId, bool $isAdmin = false): bool {
+        if ($isAdmin || (int)$folder['user_id'] === $userId) return true;
+
+        return $this->db->fetchOne(
+            "SELECT id FROM files
+             WHERE folder_id = ? AND deleted_at IS NULL AND is_public = 1
+             LIMIT 1",
+            [(int)$folder['id']]
+        ) !== null;
+    }
+
     public function getAllFolders(): array {
         return $this->db->fetchAll(
             "SELECT f.*, u.pseudo as owner_name, (SELECT COUNT(*) FROM files WHERE folder_id = f.id AND deleted_at IS NULL) as file_count
