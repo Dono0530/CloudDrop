@@ -17,6 +17,16 @@ if (isset($_GET['share'])) {
     $file = $fm->getFileById($share['file_id']);
     if (!$file) { http_response_code(404); die('Fichier supprimé'); }
 
+    if (!empty($share['password_hash'])) {
+        $submittedPassword = $_POST['share_password'] ?? '';
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST'
+            || !is_string($submittedPassword)
+            || !password_verify($submittedPassword, $share['password_hash'])) {
+            http_response_code(403);
+            die('Mot de passe incorrect ou requis');
+        }
+    }
+
     // Vérifier que le fichier résolu reste bien dans le dossier de stockage.
     $uploadDirectory = realpath(UPLOAD_DIR);
     $safeFilename = basename((string)$file['filename']);
@@ -36,6 +46,14 @@ if (isset($_GET['share'])) {
     $asciiFileName = preg_replace('/[^A-Za-z0-9._ -]/', '_', $displayName) ?: 'download';
     header('Content-Type: application/octet-stream');
     header("Content-Disposition: attachment; filename=\"$asciiFileName\"; filename*=UTF-8''" . rawurlencode($displayName));
+    if (!$fm->recordShareDownload(
+        (int)$share['id'],
+        (string)($_SERVER['REMOTE_ADDR'] ?? ''),
+        (string)($_SERVER['HTTP_USER_AGENT'] ?? '')
+    )) {
+        http_response_code(410);
+        die('Ce lien a expiré ou a atteint sa limite de téléchargements');
+    }
     header('Content-Length: ' . filesize($filePath));
     header('Cache-Control: private, no-store');
     header('X-Content-Type-Options: nosniff');
@@ -101,11 +119,35 @@ switch ($action) {
     case 'create_share':
         header('Content-Type: application/json');
         try {
-            $share = $fm->createShare((int)($_POST['file_id'] ?? 0), $_SESSION['user_id'], (int)($_POST['expiry_hours'] ?? 24), Auth::isAdmin());
+            $downloadLimitInput = $_POST['download_limit'] ?? '';
+            $downloadLimit = $downloadLimitInput === '' ? null : (int)$downloadLimitInput;
+            $share = $fm->createShare(
+                (int)($_POST['file_id'] ?? 0),
+                (int)$_SESSION['user_id'],
+                (int)($_POST['expiry_hours'] ?? 24),
+                Auth::isAdmin(),
+                (string)($_POST['share_password'] ?? ''),
+                $downloadLimit
+            );
             $url = '/php/share.php?token=' . rawurlencode($share['token']);
             echo json_encode(['success' => true, 'url' => $url, 'token' => $share['token'], 'expires_at' => $share['expires_at']]);
         } catch (Exception $e) { echo json_encode(['success' => false, 'error' => $e->getMessage()]); }
         exit;
+
+    case 'update_share_settings':
+        try {
+            $downloadLimitInput = $_POST['download_limit'] ?? '';
+            $downloadLimit = $downloadLimitInput === '' ? null : (int)$downloadLimitInput;
+            $fm->updateShareSettings(
+                (int)($_POST['share_id'] ?? 0),
+                (int)$_SESSION['user_id'],
+                (string)($_POST['share_password'] ?? ''),
+                ($_POST['remove_password'] ?? '') === '1',
+                $downloadLimit
+            );
+            $_SESSION['flash_success'] = 'Protection du lien mise à jour.';
+        } catch (Exception $e) { $_SESSION['flash_error'] = $e->getMessage(); }
+        header('Location: /php/shares.php'); exit;
 
     case 'update_share_expiry':
         try {
