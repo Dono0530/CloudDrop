@@ -28,8 +28,7 @@ if ($ext) $filters['extension'] = $ext;
 $folders = $fm->getFoldersVisibleToUser((int)$_SESSION['user_id'], Auth::isAdmin());
 $currentFolder = $folderId ? $fm->getFolderById($folderId) : null;
 if ($currentFolder && !$fm->canAccessFolder($currentFolder, (int)$_SESSION['user_id'], Auth::isAdmin())) {
-    http_response_code(404);
-    exit('Dossier introuvable');
+    render_error_page(404);
 }
 $files = $fm->getFiles($filters);
 $totalFiles = $fm->countFiles($filters);
