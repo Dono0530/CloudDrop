@@ -41,7 +41,16 @@ if (!Auth::validateCsrf($_POST[CSRF_TOKEN_NAME] ?? '')) {
 }
 
 $action = $_POST['action'] ?? '';
-$redirect = $_SERVER['HTTP_REFERER'] ?? '/php/dashboard.php';
+$redirect = '/php/dashboard.php';
+$referer = $_SERVER['HTTP_REFERER'] ?? '';
+$refererParts = $referer !== '' ? parse_url($referer) : false;
+if (is_array($refererParts) && isset($refererParts['path'])) {
+    $refererPath = $refererParts['path'];
+    if (str_starts_with($refererPath, '/') && !str_starts_with($refererPath, '//') && !preg_match('/[\\r\\n]/', $refererPath)) {
+        $redirect = $refererPath;
+        if (isset($refererParts['query'])) $redirect .= '?' . $refererParts['query'];
+    }
+}
 
 switch ($action) {
     case 'delete_file':
