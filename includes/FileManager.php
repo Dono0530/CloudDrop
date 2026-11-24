@@ -292,24 +292,84 @@ class FileManager {
     // ── PARTAGES ──────────────────────────────────────────────────
 
     private const SHARE_DURATIONS = [1, 24, 168, 720];
+    private const SHARE_DOWNLOAD_LIMITS = [1, 5, 10, 25, 50, 100];
 
-    public function createShare(int $fileId, int $userId, int $hours = 24, bool $isAdmin = false): array {
+    public function createShare(int $fileId, int $userId, int $hours = 24, bool $isAdmin = false, string $password = '', ?int $downloadLimit = null): array {
         $file = $this->getFileById($fileId);
         if (!$file) throw new Exception('Fichier introuvable');
         if ((int)$file['user_id'] !== $userId && !$isAdmin) throw new Exception('Permission refusée');
         if (!in_array($hours, self::SHARE_DURATIONS, true)) throw new Exception('Durée de partage invalide');
+        $this->validateShareSettings($password, $downloadLimit);
 
         $token = bin2hex(random_bytes(32));
         $expiresAt = date('Y-m-d H:i:s', time() + ($hours * 3600));
-        $id = $this->db->insert("INSERT INTO shares (token, file_id, user_id, expires_at) VALUES (?, ?, ?, ?)",
-            [$token, $fileId, $userId, $expiresAt]);
+        $passwordHash = $password === '' ? null : password_hash($password, PASSWORD_DEFAULT);
+        $id = $this->db->insert(
+            "INSERT INTO shares (token, file_id, user_id, expires_at, password_hash, download_limit) VALUES (?, ?, ?, ?, ?, ?)",
+            [$token, $fileId, $userId, $expiresAt, $passwordHash, $downloadLimit]
+        );
         return $this->db->fetchOne("SELECT * FROM shares WHERE id = ?", [$id]);
+    }
+
+    private function validateShareSettings(string $password, ?int $downloadLimit): void {
+        if ($password !== '' && (strlen($password) < 8 || strlen($password) > 128)) {
+            throw new Exception('Le mot de passe du lien doit faire entre 8 et 128 caractères');
+        }
+        if ($downloadLimit !== null && !in_array($downloadLimit, self::SHARE_DOWNLOAD_LIMITS, true)) {
+            throw new Exception('Limite de téléchargements invalide');
+        }
+    }
+
+    public function updateShareSettings(int $shareId, int $userId, string $password, bool $removePassword, ?int $downloadLimit): bool {
+        $this->validateShareSettings($password, $downloadLimit);
+        $share = $this->db->fetchOne("SELECT id, password_hash FROM shares WHERE id = ? AND user_id = ?", [$shareId, $userId]);
+        if (!$share) throw new Exception('Lien de partage introuvable');
+
+        $passwordHash = $share['password_hash'];
+        if ($removePassword) $passwordHash = null;
+        elseif ($password !== '') $passwordHash = password_hash($password, PASSWORD_DEFAULT);
+
+        $this->db->execute(
+            "UPDATE shares SET password_hash = ?, download_limit = ? WHERE id = ? AND user_id = ?",
+            [$passwordHash, $downloadLimit, $shareId, $userId]
+        );
+        return true;
+    }
+
+    public function recordShareDownload(int $shareId, string $ipAddress, string $userAgent): bool {
+        $updated = $this->db->execute(
+            "UPDATE shares SET download_count = download_count + 1
+             WHERE id = ? AND expires_at > NOW()
+               AND (download_limit IS NULL OR download_count < download_limit)",
+            [$shareId]
+        );
+        if ($updated !== 1) return false;
+
+        $this->db->execute(
+            "INSERT INTO share_access_log (share_id, accessed_at, ip_address, user_agent)
+             VALUES (?, NOW(), ?, ?)",
+            [$shareId, substr($ipAddress, 0, 45), substr($userAgent, 0, 255)]
+        );
+        return true;
+    }
+
+    public function getShareAccessLogs(int $shareId, int $userId): array {
+        return $this->db->fetchAll(
+            "SELECT l.accessed_at, l.ip_address, l.user_agent
+             FROM share_access_log l
+             JOIN shares s ON s.id = l.share_id
+             WHERE s.id = ? AND s.user_id = ?
+             ORDER BY l.accessed_at DESC
+             LIMIT 20",
+            [$shareId, $userId]
+        );
     }
 
     public function getUserShares(int $userId): array {
         return $this->db->fetchAll(
             "SELECT s.id, s.token, s.file_id, s.expires_at, s.created_at,
-                    f.original_name, f.file_extension, f.file_size, f.deleted_at AS file_deleted_at
+                    f.original_name, f.file_extension, f.file_size, f.deleted_at AS file_deleted_at,
+                    s.download_limit, s.download_count, (s.password_hash IS NOT NULL) AS password_protected
              FROM shares s
              LEFT JOIN files f ON f.id = s.file_id
              WHERE s.user_id = ?
@@ -346,7 +406,8 @@ class FileManager {
              FROM shares s
              JOIN files f ON s.file_id = f.id AND f.deleted_at IS NULL
              JOIN users u ON s.user_id = u.id
-             WHERE s.token = ? AND s.expires_at > NOW()",
+             WHERE s.token = ? AND s.expires_at > NOW()
+               AND (s.download_limit IS NULL OR s.download_count < s.download_limit)",
             [$token]
         );
         return $share;
