@@ -6,7 +6,7 @@
 Options -Indexes
 
 # Empêcher l'accès aux fichiers sensibles sur Apache 2.4 et anciens.
-<FilesMatch "\\.(json|md|sql|log)$">
+<FilesMatch "\.(json|md|sql|log)$">
     <IfModule mod_authz_core.c>
         Require all denied
     </IfModule>
@@ -17,7 +17,7 @@ Options -Indexes
 </FilesMatch>
 
 # Empêcher l'accès aux fichiers cachés sur Apache 2.4 et anciens.
-<FilesMatch "^\\.">
+<FilesMatch "^\.">
     <IfModule mod_authz_core.c>
         Require all denied
     </IfModule>
@@ -31,7 +31,6 @@ Options -Indexes
 <IfModule mod_headers.c>
     Header always set X-Content-Type-Options "nosniff"
     Header always set X-Frame-Options "SAMEORIGIN"
-    Header always set X-XSS-Protection "1; mode=block"
     Header always set Referrer-Policy "strict-origin-when-cross-origin"
     Header always set Permissions-Policy "camera=(), microphone=(), geolocation=()"
 </IfModule>
