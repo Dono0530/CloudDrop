@@ -10,7 +10,7 @@ require_once __DIR__ . '/config/init.php';
     <title>Informations légales — CloudDrop</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-    <link href="/css/modern.css?v=20261125-1" rel="stylesheet">
+    <link href="/css/modern.css?v=20261125-2" rel="stylesheet">
     <style>
         .legal-wrap { max-width:900px; }
         .legal-card { margin-bottom:1.25rem; }
@@ -75,7 +75,7 @@ require_once __DIR__ . '/config/init.php';
     </div></section>
     <p style="font-size:.85rem;color:var(--text-muted);">Pour les informations officielles sur les mentions légales et la protection des données, consultez la <a href="https://www.cnil.fr/fr/cnil-direct/question/les-mentions-legales-sur-un-site-web-est-ce-obligatoire" rel="noopener noreferrer">CNIL</a>.</p>
 </main>
-<script src="/js/theme.js"></script>
+<script src="/js/theme.js?v=20261125-1"></script>
 <?php require __DIR__ . '/includes/SiteFooter.php'; ?>
 </body>
 </html>
