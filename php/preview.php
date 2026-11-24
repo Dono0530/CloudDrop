@@ -40,7 +40,7 @@ $fileUrl = '/php/preview_serve.php?id=' . $fileId;
     <title>Aperçu - <?= htmlspecialchars($file['original_name']) ?></title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="/css/modern.css?v=20261125-1">
+    <link rel="stylesheet" href="/css/modern.css?v=20261125-2">
     <style>
         .preview-container { max-width:100%; max-height:75vh; display:flex; align-items:center; justify-content:center; }
         .preview-container img { max-width:100%; max-height:70vh; border-radius:8px; object-fit:contain; }
@@ -92,7 +92,7 @@ $fileUrl = '/php/preview_serve.php?id=' . $fileId;
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script src="/js/theme.js"></script>
+<script src="/js/theme.js?v=20261125-1"></script>
 <?php if ($type === 'text'): ?>
 <script>
 fetch('<?= $fileUrl ?>')
