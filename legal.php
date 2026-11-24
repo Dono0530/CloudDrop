@@ -68,6 +68,11 @@ require_once __DIR__ . '/config/init.php';
         <p>Selon les règles applicables, vous pouvez demander l’accès, la rectification, l’effacement, la limitation ou vous opposer à certains traitements. Pour exercer vos droits ou poser une question sur vos données, utilisez le formulaire de contact du site. Vous pouvez aussi adresser une réclamation à la CNIL. Les demandes nécessitent de vérifier raisonnablement l’identité du demandeur.</p>
         <p>CloudDrop utilise un cookie de session nécessaire à la connexion et le stockage local du navigateur pour mémoriser le thème d’affichage. Aucun cookie publicitaire n’est volontairement configuré par l’application.</p>
     </div></section>
+    <section class="card-modern legal-card" id="credits"><div class="card-body-modern">
+        <h2>Crédits</h2>
+        <p>CloudDrop est un projet personnel auto-hébergé. Son interface utilise <a href="https://getbootstrap.com/" rel="noopener noreferrer">Bootstrap</a> et <a href="https://icons.getbootstrap.com/" rel="noopener noreferrer">Bootstrap Icons</a>.</p>
+        <p>Code source du projet : <a href="https://github.com/Dono0530/CloudDrop" rel="noopener noreferrer">GitHub · CloudDrop</a>.</p>
+    </div></section>
     <p style="font-size:.85rem;color:var(--text-muted);">Pour les informations officielles sur les mentions légales et la protection des données, consultez la <a href="https://www.cnil.fr/fr/cnil-direct/question/les-mentions-legales-sur-un-site-web-est-ce-obligatoire" rel="noopener noreferrer">CNIL</a>.</p>
 </main>
 <script src="/js/theme.js"></script>
