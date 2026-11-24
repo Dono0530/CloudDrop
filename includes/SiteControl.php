@@ -202,7 +202,7 @@ class SiteControl {
 <meta name="robots" content="noindex,nofollow">
 <title>' . $status . ' · ' . $safeTitle . ' — CloudDrop</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
-<link rel="stylesheet" href="/css/modern.css?v=20261125-1">
+<link rel="stylesheet" href="/css/modern.css?v=20261125-2">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 <style>
 .service-error-page{min-height:100vh;display:flex;flex-direction:column;padding:0;background:radial-gradient(ellipse at 12% 0%,rgba(99,102,241,.16),transparent 42%),radial-gradient(ellipse at 100% 100%,rgba(6,182,212,.13),transparent 40%),var(--light,#f8fafc);color:var(--text,#1e293b);font-family:Inter,system-ui,sans-serif}
@@ -234,7 +234,7 @@ class SiteControl {
 <a class="service-error-secondary" href="/legal.php"><i class="bi bi-info-circle"></i> Informations du service</a>
 </div>
 </main>
-<script src="/js/theme.js"></script>' . $sharedFooter . "\n" . '
+<script src="/js/theme.js?v=20261125-1"></script>' . $sharedFooter . "\n" . '
 </body>
 </html>';
         }
