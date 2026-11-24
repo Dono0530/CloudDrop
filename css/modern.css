@@ -1444,22 +1444,24 @@ select.form-control-modern {
     transform-origin: center;
 }
 
-/* Keep every part of a recent-file row readable on hover. */
+/* Strong, theme-aware contrast for recent file rows and action buttons. */
 .file-item:hover,
 .file-item:hover .file-info .name,
 .file-item:hover .file-info .meta,
-.file-item:hover .file-info .meta span {
+.file-item:hover .file-info .meta span,
+.file-item:hover .file-actions .btn-modern {
     color: #1e293b !important;
 }
 .file-item:hover {
-    background: #e2e8f0 !important;
+    background-color: #e2e8f0 !important;
 }
 [data-theme="dark"] .file-item:hover,
 [data-theme="dark"] .file-item:hover .file-info .name,
 [data-theme="dark"] .file-item:hover .file-info .meta,
-[data-theme="dark"] .file-item:hover .file-info .meta span {
+[data-theme="dark"] .file-item:hover .file-info .meta span,
+[data-theme="dark"] .file-item:hover .file-actions .btn-modern {
     color: #f8fafc !important;
 }
 [data-theme="dark"] .file-item:hover {
-    background: #334155 !important;
+    background-color: #334155 !important;
 }
