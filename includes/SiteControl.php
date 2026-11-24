@@ -189,6 +189,7 @@ class SiteControl {
 </div>
 <div class="service-error-footer">CloudDrop · Service de fichiers privé</div>
 </main>
+<script src="/js/theme.js"></script>
 </body>
 </html>';
         }
