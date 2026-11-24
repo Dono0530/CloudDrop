@@ -12,23 +12,21 @@ $fm = new FileManager();
 if (isset($_GET['share'])) {
     $token = $_GET['share'];
     $share = $fm->getShareByToken($token);
-    if (!$share) { http_response_code(404); die('Lien invalide ou expiré'); }
+    if (!$share) render_error_page(404);
 
     $file = $fm->getFileById($share['file_id']);
-    if (!$file) { http_response_code(404); die('Fichier supprimé'); }
+    if (!$file) render_error_page(404);
 
     if (!empty($share['password_hash'])) {
         $submittedPassword = $_POST['share_password'] ?? '';
         $remoteIp = clouddrop_client_ip();
         if ($fm->isSharePasswordRateLimited((int)$share['id'], $remoteIp)) {
-            http_response_code(429);
-            die('Trop de tentatives. Réessayez dans 15 minutes.');
+            render_error_page(429);
         }
         if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !is_string($submittedPassword)
             || !password_verify($submittedPassword, $share['password_hash'])) {
             $fm->recordFailedSharePasswordAttempt((int)$share['id'], $remoteIp);
-            http_response_code(403);
-            die('Mot de passe incorrect ou requis');
+            render_error_page(403);
         }
         $fm->clearSharePasswordAttempts((int)$share['id'], $remoteIp);
     }
@@ -41,12 +39,11 @@ if (isset($_GET['share'])) {
         : false;
     if ($filePath === false || !is_file($filePath)
         || strpos($filePath, $uploadDirectory . DIRECTORY_SEPARATOR) !== 0) {
-        http_response_code(404);
-        die('Fichier introuvable');
+        render_error_page(404);
     }
 
     $ext = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
-    if (in_array($ext, DANGEROUS_EXTENSIONS)) { http_response_code(403); die('Type non autorisé'); }
+    if (in_array($ext, DANGEROUS_EXTENSIONS)) render_error_page(403);
 
     $displayName = str_replace(["\r", "\n", "\0"], '', (string)$file['original_name']);
     $asciiFileName = preg_replace('/[^A-Za-z0-9._ -]/', '_', $displayName) ?: 'download';
@@ -57,8 +54,7 @@ if (isset($_GET['share'])) {
         clouddrop_client_ip(),
         (string)($_SERVER['HTTP_USER_AGENT'] ?? '')
     )) {
-        http_response_code(410);
-        die('Ce lien a expiré ou a atteint sa limite de téléchargements');
+        render_error_page(410);
     }
     header('Content-Length: ' . filesize($filePath));
     header('Cache-Control: private, no-store');
@@ -73,7 +69,7 @@ Auth::requireLogin();
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') { header('Location: /php/dashboard.php'); exit; }
 if (!Auth::validateCsrf($_POST[CSRF_TOKEN_NAME] ?? '')) {
     if (isset($_POST['ajax'])) { header('Content-Type: application/json'); echo json_encode(['success' => false, 'error' => 'CSRF invalide']); exit; }
-    http_response_code(403); die('CSRF invalide');
+    render_error_page(403);
 }
 
 $action = $_POST['action'] ?? '';
