@@ -309,10 +309,10 @@ class FileManager {
     public function getUserShares(int $userId): array {
         return $this->db->fetchAll(
             "SELECT s.id, s.token, s.file_id, s.expires_at, s.created_at,
-                    f.original_name, f.file_extension, f.file_size
+                    f.original_name, f.file_extension, f.file_size, f.deleted_at AS file_deleted_at
              FROM shares s
-             JOIN files f ON f.id = s.file_id
-             WHERE s.user_id = ? AND f.deleted_at IS NULL
+             LEFT JOIN files f ON f.id = s.file_id
+             WHERE s.user_id = ?
              ORDER BY s.created_at DESC",
             [$userId]
         );
@@ -320,7 +320,12 @@ class FileManager {
 
     public function updateShareExpiry(int $shareId, int $userId, int $hours): bool {
         if (!in_array($hours, self::SHARE_DURATIONS, true)) throw new Exception('Durée de partage invalide');
-        $share = $this->db->fetchOne("SELECT id FROM shares WHERE id = ? AND user_id = ?", [$shareId, $userId]);
+        $share = $this->db->fetchOne(
+            "SELECT s.id FROM shares s
+             JOIN files f ON f.id = s.file_id AND f.deleted_at IS NULL
+             WHERE s.id = ? AND s.user_id = ?",
+            [$shareId, $userId]
+        );
         if (!$share) throw new Exception('Lien de partage introuvable');
 
         $expiresAt = date('Y-m-d H:i:s', time() + ($hours * 3600));
@@ -329,11 +334,9 @@ class FileManager {
     }
 
     public function deleteShare(int $shareId, int $userId): bool {
-        $deleted = $this->db->execute("DELETE FROM shares WHERE id = ? AND user_id = ?", [$shareId, $userId]);
-        if (!$deleted) {
-            $share = $this->db->fetchOne("SELECT id FROM shares WHERE id = ? AND user_id = ?", [$shareId, $userId]);
-            if ($share) throw new Exception('Impossible de supprimer le lien');
-        }
+        $share = $this->db->fetchOne("SELECT id FROM shares WHERE id = ? AND user_id = ?", [$shareId, $userId]);
+        if (!$share) throw new Exception('Lien de partage introuvable');
+        $this->db->execute("DELETE FROM shares WHERE id = ? AND user_id = ?", [$shareId, $userId]);
         return true;
     }
 
