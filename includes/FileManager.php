@@ -374,16 +374,24 @@ class FileManager {
         if ($updated !== 1) return false;
 
         $this->db->execute(
-            "INSERT INTO share_access_log (share_id, accessed_at, ip_address, user_agent)
-             VALUES (?, NOW(), ?, ?)",
+            "INSERT INTO share_access_log (share_id, access_type, accessed_at, ip_address, user_agent)
+             VALUES (?, 'download', NOW(), ?, ?)",
             [$shareId, substr($ipAddress, 0, 45), substr($userAgent, 0, 255)]
         );
         return true;
     }
 
+    public function recordSharePreview(int $shareId, string $ipAddress, string $userAgent): void {
+        $this->db->execute(
+            "INSERT INTO share_access_log (share_id, access_type, accessed_at, ip_address, user_agent)
+             VALUES (?, 'preview', NOW(), ?, ?)",
+            [$shareId, substr($ipAddress, 0, 45), substr($userAgent, 0, 255)]
+        );
+    }
+
     public function getShareAccessLogs(int $shareId, int $userId): array {
         return $this->db->fetchAll(
-            "SELECT l.accessed_at, l.ip_address, l.user_agent
+            "SELECT l.access_type, l.accessed_at, l.ip_address, l.user_agent
              FROM share_access_log l
              JOIN shares s ON s.id = l.share_id
              WHERE s.id = ? AND s.user_id = ?
@@ -436,8 +444,7 @@ class FileManager {
              FROM shares s
              JOIN files f ON s.file_id = f.id AND f.deleted_at IS NULL
              JOIN users u ON s.user_id = u.id
-             WHERE s.token = ? AND s.expires_at > NOW()
-               AND (s.download_limit IS NULL OR s.download_count < s.download_limit)",
+             WHERE s.token = ? AND s.expires_at > NOW()",
             [$token]
         );
         return $share;
