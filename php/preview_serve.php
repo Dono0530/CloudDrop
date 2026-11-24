@@ -23,14 +23,13 @@ if (!$file || !$fm->canAccessFile(
 }
 
 $filePath = UPLOAD_DIR . $file['filename'];
-if (!file_exists($filePath)) { http_response_code(404); die('Fichier introuvable'); }
+if (!file_exists($filePath)) { render_error_page(404); }
 
 $ext = strtolower($file['file_extension']);
 
 // Bloquer les extensions dangereuses
 if (in_array($ext, DANGEROUS_EXTENSIONS)) {
-    http_response_code(403);
-    die('Type non autorisé');
+    render_error_page(403);
 }
 
 // Déterminer le Content-Type
