@@ -87,9 +87,13 @@ class SiteControl {
         if (!$isAdmin && !empty($_SESSION['user_id'])) {
             $ban = self::isUserBanned((int)$_SESSION['user_id']);
             if ($ban) {
-                $_SESSION['ban_notice'] = self::formatBanMessage($ban);
+                $banMessage = self::formatBanMessage($ban);
+                $_SESSION['ban_notice'] = $banMessage;
                 foreach (['user_id', 'username', 'user_role', 'logged_in', 'login_time', 'last_regeneration'] as $key) unset($_SESSION[$key]);
                 if (session_status() === PHP_SESSION_ACTIVE) session_regenerate_id(true);
+                if (!in_array($path, ['/auth/login.php', '/auth/logout.php'], true)) {
+                    self::deny(403, $banMessage);
+                }
             }
         }
 
@@ -121,7 +125,10 @@ class SiteControl {
         } else {
             header('Content-Type: text/html; charset=utf-8');
             $safeMessage = htmlspecialchars($message, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
-            echo '<!doctype html><html lang="fr"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Service indisponible — CloudDrop</title><body style="font-family:system-ui,sans-serif;max-width:680px;margin:12vh auto;padding:24px;color:#1e293b"><h1>Service temporairement indisponible</h1><p>' . $safeMessage . '</p><p><a href="/index.php">Réessayer plus tard</a></p></body></html>';
+            $title = $status === 403 ? 'Compte suspendu' : 'Service temporairement indisponible';
+            $safeTitle = htmlspecialchars($title, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+            $actionLink = $status === 403 ? '<a href="/auth/login.php">Retour à la connexion</a>' : '<a href="/index.php">Réessayer plus tard</a>';
+            echo '<!doctype html><html lang="fr"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>' . $safeTitle . ' — CloudDrop</title><body style="font-family:system-ui,sans-serif;max-width:680px;margin:12vh auto;padding:24px;color:#1e293b"><h1>' . $safeTitle . '</h1><p>' . $safeMessage . '</p><p>' . $actionLink . '</p></body></html>';
         }
         exit;
     }
