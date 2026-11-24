@@ -8,6 +8,9 @@ CREATE TABLE IF NOT EXISTS users (
     pseudo VARCHAR(50) NOT NULL UNIQUE,
     mdp VARCHAR(255) NOT NULL,
     role ENUM('user', 'admin') NOT NULL DEFAULT 'user',
+    is_banned TINYINT(1) NOT NULL DEFAULT 0,
+    banned_until DATETIME DEFAULT NULL,
+    ban_reason VARCHAR(255) DEFAULT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     INDEX idx_pseudo (pseudo),
     INDEX idx_role (role)
@@ -101,4 +104,11 @@ CREATE TABLE IF NOT EXISTS activity_log (
     INDEX idx_user_id (user_id),
     INDEX idx_created_at (created_at),
     INDEX idx_action (action)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Réglages globaux administrables depuis le panneau d'administration
+CREATE TABLE IF NOT EXISTS site_settings (
+    setting_key VARCHAR(100) PRIMARY KEY,
+    setting_value TEXT NOT NULL,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
