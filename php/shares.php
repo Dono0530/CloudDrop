@@ -124,6 +124,7 @@ $durations = [1 => '1 heure', 24 => '24 heures', 168 => '7 jours', 720 => '30 jo
                                                 <?php foreach ($accessLogs as $access): ?>
                                                     <li title="<?= htmlspecialchars($access['user_agent'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
                                                         <?= date('d/m/Y H:i:s', strtotime($access['accessed_at'])) ?>
+                                                        · <?= ($access['access_type'] ?? 'download') === 'preview' ? 'Aperçu' : 'Téléchargement' ?>
                                                         · <?= htmlspecialchars($access['ip_address']) ?>
                                                     </li>
                                                 <?php endforeach; ?>
