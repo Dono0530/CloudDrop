@@ -5,7 +5,7 @@ require_once __DIR__ . '/../includes/FileManager.php';
 $fm = new FileManager();
 
 $token = $_GET['token'] ?? '';
-if (!$token) { http_response_code(404); die('Lien invalide'); }
+if (!$token) render_error_page(404);
 
 $share = $fm->getShareByToken($token);
 if (!$share) {
