@@ -91,6 +91,14 @@ mysql -u root -p clouddrop < config/migrate_file_visibility.sql
 
 Les nouvelles installations récupèrent déjà cette colonne depuis `config/schema.sql`.
 
+Pour activer la protection par mot de passe, les limites de téléchargements et l'historique des accès aux liens de partage, exécutez ensuite une seule fois :
+
+```bash
+mysql -u root -p clouddrop < config/migrate_share_security.sql
+```
+
+Cette migration ajoute les colonnes de sécurité et crée les tables d'historique et de limitation des tentatives de mot de passe. L'historique conserve l'adresse IP et le navigateur indiqués lors des téléchargements réussis ; révoquer un lien supprime aussi son historique.
+
 ### Premier compte admin
 
 Après inscription, rendez-vous manuellement dans la base :
