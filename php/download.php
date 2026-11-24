@@ -105,11 +105,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'creat
                         <div>
                             <div style="font-weight:500;font-size:0.9rem;"><?= htmlspecialchars($folder['name']) ?></div>
                             <div style="font-size:0.75rem;color:var(--text-muted);"><?= $folder['file_count'] ?> fichier(s)
-                                            <?php if (!empty($folder['owner_name']) && (int)$folder['user_id'] !== (int)$_SESSION['user_id']): ?>
+                                            <?php if (!empty($folder['owner_name'])): ?>
                                                 <div style="font-size:0.75rem;color:var(--text-muted);">Créé par <?= htmlspecialchars($folder['owner_name']) ?></div>
                                             <?php endif; ?></div>
                         </div>
                     </a>
+                    <?php if ((int)$folder['user_id'] === (int)$_SESSION['user_id']): ?>
                     <form method="POST" action="/php/actions.php" onsubmit="return confirm('Supprimer ce dossier ? Les fichiers seront déplacés à la racine.');" style="display:inline;">
                         <?= Auth::csrfField() ?>
                         <input type="hidden" name="action" value="delete_folder">
@@ -118,6 +119,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'creat
                             <i class="bi bi-trash3" style="color:var(--danger);font-size:0.85rem;"></i>
                         </button>
                     </form>
+                    <?php endif; ?>
                 </div>
             </div>
             <?php endforeach; ?>
