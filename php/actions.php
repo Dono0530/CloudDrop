@@ -19,12 +19,18 @@ if (isset($_GET['share'])) {
 
     if (!empty($share['password_hash'])) {
         $submittedPassword = $_POST['share_password'] ?? '';
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST'
-            || !is_string($submittedPassword)
+        $remoteIp = (string)($_SERVER['REMOTE_ADDR'] ?? '');
+        if ($fm->isSharePasswordRateLimited((int)$share['id'], $remoteIp)) {
+            http_response_code(429);
+            die('Trop de tentatives. Réessayez dans 15 minutes.');
+        }
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !is_string($submittedPassword)
             || !password_verify($submittedPassword, $share['password_hash'])) {
+            $fm->recordFailedSharePasswordAttempt((int)$share['id'], $remoteIp);
             http_response_code(403);
             die('Mot de passe incorrect ou requis');
         }
+        $fm->clearSharePasswordAttempts((int)$share['id'], $remoteIp);
     }
 
     // Vérifier que le fichier résolu reste bien dans le dossier de stockage.
