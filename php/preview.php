@@ -118,6 +118,7 @@ fetch('<?= $fileUrl ?>')
     .catch(() => { document.getElementById('textContent').textContent = 'Erreur de chargement du fichier.'; });
 </script>
 <?php endif; ?>
+<?php require __DIR__ . '/../includes/SiteFooter.php'; ?>
 </body>
 </html>
 
