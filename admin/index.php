@@ -78,6 +78,10 @@ $globalStats = $fm->getGlobalStats();
 $activity = $fm->getRecentActivity(30);
 $db = Database::getInstance();
 $users = $db->fetchAll("SELECT u.*, COUNT(f.id) as file_count, COALESCE(SUM(f.file_size), 0) as total_size FROM users u LEFT JOIN files f ON u.id = f.user_id AND f.deleted_at IS NULL GROUP BY u.id ORDER BY u.id");
+$activeBans = array_values(array_filter($users, static function (array $u): bool {
+    return $u['role'] === 'user' && !empty($u['is_banned'])
+        && (empty($u['banned_until']) || strtotime($u['banned_until']) > time());
+}));
 $tab = $_GET['tab'] ?? 'files';
 $controls = $siteControl->settings();
 ?>
@@ -158,6 +162,7 @@ $controls = $siteControl->settings();
         <a href="?tab=users" class="filter-pill <?= $tab === 'users' ? 'active' : '' ?>"><i class="bi bi-people"></i> Utilisateurs</a>
         <a href="?tab=activity" class="filter-pill <?= $tab === 'activity' ? 'active' : '' ?>"><i class="bi bi-lightning-charge"></i> Activité</a>
         <a href="?tab=settings" class="filter-pill <?= $tab === 'settings' ? 'active' : '' ?>"><i class="bi bi-sliders"></i> Contrôle du site</a>
+        <a href="?tab=bans" class="filter-pill <?= $tab === 'bans' ? 'active' : '' ?>"><i class="bi bi-person-lock"></i> Bannissements <span class="badge-modern <?= count($activeBans) ? 'badge-danger' : 'badge-success' ?>"><?= count($activeBans) ?></span></a>
     </div>
 
     <?php if ($tab === 'files'): ?>
@@ -296,6 +301,61 @@ $controls = $siteControl->settings();
                                 <td><?= date('d/m/Y H:i:s', strtotime($act['created_at'])) ?></td>
                             </tr>
                             <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            <?php endif; ?>
+        </div>
+    </div>
+    <?php elseif ($tab === 'bans'): ?>
+    <div class="card-modern fade-in fade-in-delay-2">
+        <div class="card-header-modern"><i class="bi bi-person-lock"></i> Bannissements actifs <span class="badge-modern badge-danger ms-2"><?= count($activeBans) ?></span></div>
+        <div class="card-body-modern p-0">
+            <?php if (empty($activeBans)): ?>
+                <div class="empty-state">
+                    <i class="bi bi-shield-check empty-icon" style="color:var(--success);"></i>
+                    <h3>Aucun bannissement actif</h3>
+                    <p>Pour suspendre un compte, ouvrez l’onglet Utilisateurs et choisissez une durée. Les comptes bannis apparaîtront ici avec leur date de fin, le temps restant et les options de modification ou de levée.</p>
+                    <a href="?tab=users" class="btn-modern btn-outline-modern mt-3"><i class="bi bi-people"></i> Voir les utilisateurs</a>
+                </div>
+            <?php else: ?>
+                <div style="overflow-x:auto;">
+                    <table class="table-modern">
+                        <thead><tr><th>Utilisateur</th><th>Fin du bannissement</th><th>Motif</th><th>Modifier ou lever</th></tr></thead>
+                        <tbody>
+                        <?php foreach ($activeBans as $u): ?>
+                            <tr>
+                                <td>
+                                    <div style="font-weight:600;"><?= htmlspecialchars($u['pseudo'], ENT_QUOTES, 'UTF-8') ?></div>
+                                    <span class="badge-modern badge-danger"><?= empty($u['banned_until']) ? 'Permanent' : 'Temporaire' ?></span>
+                                </td>
+                                <td><?= htmlspecialchars(SiteControl::banTimeRemaining($u['banned_until'] ?? null), ENT_QUOTES, 'UTF-8') ?></td>
+                                <td><?= htmlspecialchars($u['ban_reason'] ?? 'Aucun motif indiqué', ENT_QUOTES, 'UTF-8') ?></td>
+                                <td>
+                                    <form method="POST" class="d-flex flex-wrap gap-1 align-items-center mb-2">
+                                        <?= Auth::csrfField() ?>
+                                        <input type="hidden" name="action" value="change_ban">
+                                        <input type="hidden" name="user_id" value="<?= (int)$u['id'] ?>">
+                                        <select name="duration" class="form-control-modern" style="width:auto;padding:.35rem;" required>
+                                            <option value="" selected disabled>Choisir la nouvelle durée</option>
+                                            <option value="3600">1 heure</option>
+                                            <option value="86400">24 heures</option>
+                                            <option value="604800">7 jours</option>
+                                            <option value="2592000">30 jours</option>
+                                            <option value="permanent">Permanent</option>
+                                        </select>
+                                        <input type="text" name="ban_reason" class="form-control-modern" maxlength="255" value="<?= htmlspecialchars($u['ban_reason'] ?? '', ENT_QUOTES, 'UTF-8') ?>" placeholder="Motif (facultatif)" style="width:170px;padding:.35rem;">
+                                        <button type="submit" class="btn-modern btn-outline-modern btn-sm" onclick="return confirm('Appliquer cette nouvelle durée de bannissement ?');"><i class="bi bi-pencil-square"></i> Modifier</button>
+                                    </form>
+                                    <form method="POST" style="display:inline;">
+                                        <?= Auth::csrfField() ?>
+                                        <input type="hidden" name="action" value="unban_user">
+                                        <input type="hidden" name="user_id" value="<?= (int)$u['id'] ?>">
+                                        <button type="submit" class="btn-modern btn-ghost btn-sm"><i class="bi bi-unlock"></i> Lever le bannissement</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
                         </tbody>
                     </table>
                 </div>
