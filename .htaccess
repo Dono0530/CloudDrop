@@ -5,16 +5,26 @@
 # Empêcher le listage des répertoires
 Options -Indexes
 
-# Empêcher l'accès aux fichiers sensibles
-<FilesMatch "\.(json|md|sql|log)$">
-    Order Allow,Deny
-    Deny from all
+# Empêcher l'accès aux fichiers sensibles sur Apache 2.4 et anciens.
+<FilesMatch "\\.(json|md|sql|log)$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order Allow,Deny
+        Deny from all
+    </IfModule>
 </FilesMatch>
 
-# Empêcher l'accès aux fichiers cachés
-<FilesMatch "^\.">
-    Order Allow,Deny
-    Deny from all
+# Empêcher l'accès aux fichiers cachés sur Apache 2.4 et anciens.
+<FilesMatch "^\\.">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order Allow,Deny
+        Deny from all
+    </IfModule>
 </FilesMatch>
 
 # Headers de sécurité
@@ -23,6 +33,7 @@ Options -Indexes
     Header always set X-Frame-Options "SAMEORIGIN"
     Header always set X-XSS-Protection "1; mode=block"
     Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    Header always set Permissions-Policy "camera=(), microphone=(), geolocation=()"
 </IfModule>
 
 # Compression
