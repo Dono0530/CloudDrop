@@ -76,6 +76,11 @@ class Auth {
             return ['success' => false, 'error' => 'Identifiants incorrects'];
         }
 
+        $ban = SiteControl::isUserBanned((int)$user['id']);
+        if ($ban) {
+            return ['success' => false, 'error' => 'Ce compte est temporairement ou définitivement suspendu.'];
+        }
+
         // Mettre à jour le hash si nécessaire (upgrade bcrypt cost)
         if (password_needs_rehash($user['mdp'], PASSWORD_DEFAULT, ['cost' => BCRYPT_COST])) {
             $newHash = password_hash($password, PASSWORD_DEFAULT, ['cost' => BCRYPT_COST]);
