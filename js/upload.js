@@ -72,6 +72,7 @@ class UploadItem {
         this.progress = 0;
         this.startTime = 0;
         this.retries = 0;
+        this.abortController = null;
     }
 
     async upload(onProgress) {
@@ -82,6 +83,10 @@ class UploadItem {
         while (chunk < this.totalChunks && this.status === 'uploading') {
             const result = await this._sendChunk(chunk);
             if (!result.ok) {
+                if (this.status === 'cancelled') {
+                    onProgress(this);
+                    return;
+                }
                 if (result.fatal) {
                     this.status = 'error';
                     this.error = result.error;
@@ -133,11 +138,14 @@ class UploadItem {
         };
 
         try {
+            this.abortController = new AbortController();
             const res = await fetch(ENDPOINT, {
                 method: 'POST',
                 body: chunkData,
                 headers: headers,
+                signal: this.abortController.signal,
             });
+            this.abortController = null;
 
             if (!res.ok) {
                 let msg = 'Erreur serveur (' + res.status + ')';
@@ -145,7 +153,7 @@ class UploadItem {
                     const errData = await res.json();
                     if (errData.error) msg = errData.error;
                 } catch {}
-                return { ok: false, error: msg, fatal: res.status === 403 || res.status === 400 };
+                return { ok: false, error: msg, fatal: [400, 403, 503].includes(res.status) };
             }
 
             const data = await res.json();
@@ -156,11 +164,18 @@ class UploadItem {
 
             return { ok: true, data };
         } catch (e) {
+            this.abortController = null;
+            if (this.status === 'cancelled' || e.name === 'AbortError') {
+                return { ok: false, error: 'Transfert interrompu', fatal: true };
+            }
             return { ok: false, error: 'Réseau : ' + e.message, fatal: false };
         }
     }
 
-    cancel() { this.status = 'cancelled'; }
+    cancel() {
+        this.status = 'cancelled';
+        if (this.abortController) this.abortController.abort();
+    }
 }
 
 // ── Queue Manager ─────────────────────────────────────────────
@@ -267,6 +282,42 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const queue = new UploadQueue();
     let isUploading = false;
+    let uploadsDisabled = document.querySelector('.card-modern[data-uploads-disabled]')?.dataset.uploadsDisabled === '1';
+    const uploadDisabledNotice = document.getElementById('uploadDisabledNotice');
+
+    function setUploadAvailability(disabled) {
+        uploadsDisabled = Boolean(disabled);
+        uploadDisabledNotice.hidden = !uploadsDisabled;
+        fileInput.disabled = uploadsDisabled;
+        dropZone.classList.toggle('upload-disabled', uploadsDisabled);
+        dropZone.setAttribute('aria-disabled', uploadsDisabled ? 'true' : 'false');
+        uploadBtn.disabled = uploadsDisabled || isUploading || queue.items.length === 0;
+    }
+
+    async function refreshUploadAvailability() {
+        try {
+            const response = await fetch('/php/upload_status.php', {
+                headers: { 'Accept': 'application/json' },
+                cache: 'no-store',
+                credentials: 'same-origin',
+            });
+            if (!response.ok) return;
+            const status = await response.json();
+            const wasEnabled = !uploadsDisabled;
+            setUploadAvailability(Boolean(status.uploads_disabled));
+            if (status.uploads_disabled && wasEnabled) {
+                queue.cancelAll();
+                showToast('Les uploads viennent d’être désactivés. Le transfert en cours est interrompu.', 'error');
+                if (isUploading) globalLabel.textContent = 'Uploads désactivés par l’administrateur';
+                render();
+            }
+        } catch (e) {
+            // Une erreur ponctuelle de statut ne désactive pas l’upload; le serveur reste l’autorité.
+        }
+    }
+
+    refreshUploadAvailability();
+    window.setInterval(refreshUploadAvailability, 3000);
 
     ['dragenter','dragover'].forEach(e => dropZone.addEventListener(e, ev => {
         ev.preventDefault(); dropZone.classList.add('dragover');
@@ -278,6 +329,10 @@ document.addEventListener('DOMContentLoaded', () => {
     fileInput.addEventListener('change', () => { addFiles(Array.from(fileInput.files)); fileInput.value = ''; });
 
     function addFiles(files) {
+        if (uploadsDisabled) {
+            showToast('Les uploads sont temporairement désactivés.', 'error');
+            return;
+        }
         files.forEach(f => queue.add(f, 0));
         render();
     }
@@ -290,7 +345,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         clearBtn.style.display = isUploading ? 'none' : '';
-        uploadBtn.disabled = isUploading;
+        uploadBtn.disabled = isUploading || uploadsDisabled;
 
         fileQueue.innerHTML = queue.items.map((item, i) => {
             const ext = fileExt(item.file.name);
@@ -339,6 +394,10 @@ document.addEventListener('DOMContentLoaded', () => {
     window._removeFile = function(i) { queue.remove(i); render(); };
 
     uploadBtn.addEventListener('click', async () => {
+        if (uploadsDisabled) {
+            showToast('Les uploads sont temporairement désactivés.', 'error');
+            return;
+        }
         if (queue.items.length === 0) return;
 
         const folderEl = document.getElementById('folderSelect');
@@ -373,7 +432,15 @@ document.addEventListener('DOMContentLoaded', () => {
         if (visibilitySelect) visibilitySelect.disabled = false;
         cancelBtn.style.display = 'none';
         uploadBtn.style.display = '';
-        uploadBtn.disabled = false;
+        uploadBtn.disabled = uploadsDisabled || queue.items.length === 0;
+
+        if (uploadsDisabled) {
+            globalLabel.textContent = 'Uploads désactivés par l’administrateur';
+            globalInfo.textContent = 'Le transfert a été interrompu.';
+            showToast('Les uploads ont été désactivés. Le transfert a été arrêté.', 'error');
+            render();
+            return;
+        }
 
         globalBar.style.width = '100%';
         globalPercent.textContent = '100%';
