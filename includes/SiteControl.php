@@ -50,7 +50,13 @@ class SiteControl {
     public static function isUserBanned(int $userId): ?array {
         try {
             return Database::getInstance()->fetchOne(
-                'SELECT is_banned, banned_until, ban_reason FROM users WHERE id = ? AND is_banned = 1 AND (banned_until IS NULL OR banned_until > NOW())',
+                "SELECT is_banned, banned_until, ban_reason,
+                        CASE WHEN banned_until IS NULL THEN NULL
+                             ELSE GREATEST(TIMESTAMPDIFF(SECOND, NOW(), banned_until), 0) END AS ban_seconds_remaining,
+                        CASE WHEN banned_until IS NULL THEN NULL
+                             ELSE DATE_FORMAT(banned_until, '%d/%m/%Y à %H:%i') END AS ban_until_display
+                 FROM users
+                 WHERE id = ? AND is_banned = 1 AND (banned_until IS NULL OR banned_until > NOW())",
                 [$userId]
             );
         } catch (Throwable $e) {
@@ -58,9 +64,14 @@ class SiteControl {
         }
     }
 
-    public static function banTimeRemaining(?string $bannedUntil): string {
+    public static function banTimeRemaining(
+        ?string $bannedUntil,
+        ?int $remainingSeconds = null,
+        ?string $displayUntil = null
+    ): string {
         if ($bannedUntil === null || $bannedUntil === '') return 'sans date de fin';
-        $seconds = max(0, strtotime($bannedUntil) - time());
+        // Utilise la durée renvoyée par MySQL, la même horloge que celle du contrôle de bannissement.
+        $seconds = $remainingSeconds ?? max(0, strtotime($bannedUntil) - time());
         if ($seconds <= 0) return 'bannissement expiré';
         $days = intdiv($seconds, 86400);
         $hours = intdiv($seconds % 86400, 3600);
@@ -69,14 +80,19 @@ class SiteControl {
         if ($days > 0) $parts[] = $days . ' j';
         if ($hours > 0) $parts[] = $hours . ' h';
         if ($minutes > 0 || !$parts) $parts[] = max(1, $minutes) . ' min';
-        return 'fin le ' . date('d/m/Y à H:i', strtotime($bannedUntil)) . ' · reste ' . implode(' ', $parts);
+        $endDate = $displayUntil ?? $bannedUntil;
+        return 'fin le ' . $endDate . ' · reste ' . implode(' ', $parts);
     }
 
     public static function formatBanMessage(array $ban, bool $includeReason = false): string {
         $until = $ban['banned_until'] ?? null;
         $message = $until === null
             ? 'Ce compte est suspendu sans date de fin.'
-            : 'Ce compte est suspendu : ' . self::banTimeRemaining((string)$until) . '.';
+            : 'Ce compte est suspendu : ' . self::banTimeRemaining(
+                (string)$until,
+                isset($ban['ban_seconds_remaining']) ? (int)$ban['ban_seconds_remaining'] : null,
+                $ban['ban_until_display'] ?? null
+            ) . '.';
         if ($includeReason && !empty($ban['ban_reason'])) $message .= ' Motif : ' . (string)$ban['ban_reason'];
         return $message;
     }
