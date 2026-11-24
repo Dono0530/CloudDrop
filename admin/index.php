@@ -56,6 +56,7 @@ $tab = $_GET['tab'] ?? 'files';
             <a href="/php/dashboard.php" class="nav-link"><i class="bi bi-speedometer2"></i> Dashboard</a>
             <a href="/php/upload.php" class="nav-link"><i class="bi bi-cloud-arrow-up"></i> Upload</a>
             <a href="/php/download.php" class="nav-link"><i class="bi bi-folder2-open"></i> Fichiers</a>
+            <a href="/php/shares.php" class="nav-link"><i class="bi bi-link-45deg"></i> Mes liens</a>
             <a href="/php/profile.php" class="nav-link"><i class="bi bi-person"></i> Profil</a>
             <a href="/admin/index.php" class="nav-link active"><i class="bi bi-shield-lock"></i> Admin</a>
             <a href="/auth/logout.php" class="nav-link nav-link-cta"><i class="bi bi-box-arrow-right"></i> Déconnexion</a>
