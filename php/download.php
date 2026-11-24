@@ -358,6 +358,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'creat
                         <option value="720">30 jours</option>
                     </select>
                 </div>
+                <div class="form-group-modern">
+                    <label for="sharePassword">Mot de passe (facultatif, 8 caractères minimum)</label>
+                    <input type="password" id="sharePassword" class="form-control-modern" minlength="8" maxlength="128" autocomplete="new-password">
+                </div>
+                <div class="form-group-modern">
+                    <label for="shareDownloadLimit">Nombre maximal de téléchargements</label>
+                    <select id="shareDownloadLimit" class="form-control-modern">
+                        <option value="">Illimité</option>
+                        <option value="1">1 téléchargement</option>
+                        <option value="5">5 téléchargements</option>
+                        <option value="10">10 téléchargements</option>
+                        <option value="25">25 téléchargements</option>
+                        <option value="50">50 téléchargements</option>
+                        <option value="100">100 téléchargements</option>
+                    </select>
+                </div>
                 <div id="shareResult" style="display:none;">
                     <label style="font-size:0.85rem;font-weight:500;margin-bottom:0.3rem;display:block;">Lien de partage</label>
                     <div style="display:flex;align-items:stretch;gap:.5rem;width:100%;flex-wrap:nowrap;">
@@ -398,6 +414,8 @@ async function createShare() {
     fd.append('action', 'create_share');
     fd.append('file_id', shareFileId);
     fd.append('expiry_hours', document.getElementById('shareExpiry').value);
+    fd.append('share_password', document.getElementById('sharePassword').value);
+    fd.append('download_limit', document.getElementById('shareDownloadLimit').value);
     fd.append('_csrf_token', '<?= $_SESSION[CSRF_TOKEN_NAME] ?? '' ?>');
     const res = await fetch('/php/actions.php', { method: 'POST', body: fd });
     const data = await res.json();
