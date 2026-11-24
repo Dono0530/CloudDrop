@@ -5,6 +5,7 @@ function render_error_page(int $statusCode): void {
         401 => ['title' => 'Connexion requise', 'message' => 'Connectez-vous pour accéder à cette page.'],
         403 => ['title' => 'Accès refusé', 'message' => 'Votre compte ne dispose pas des droits nécessaires pour afficher cette page.'],
         404 => ['title' => 'Page introuvable', 'message' => 'Cette adresse n’existe pas ou le contenu n’est plus disponible.'],
+        410 => ['title' => 'Lien indisponible', 'message' => 'Ce lien a expiré ou a atteint sa limite de téléchargements.'],
         429 => ['title' => 'Trop de tentatives', 'message' => 'L’accès est temporairement limité. Réessayez dans quelques minutes.'],
         500 => ['title' => 'Incident temporaire', 'message' => 'CloudDrop rencontre un problème. Réessayez un peu plus tard.'],
     ];
