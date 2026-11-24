@@ -78,7 +78,7 @@ class Auth {
 
         $ban = SiteControl::isUserBanned((int)$user['id']);
         if ($ban) {
-            return ['success' => false, 'error' => 'Ce compte est temporairement ou définitivement suspendu.'];
+            return ['success' => false, 'error' => SiteControl::formatBanMessage($ban, true)];
         }
 
         // Mettre à jour le hash si nécessaire (upgrade bcrypt cost)
