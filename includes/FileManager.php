@@ -18,7 +18,7 @@ class FileManager {
 
     public function recordUpload(string $filename, int $userId, int $fileSize, string $originalName, int $folderId = 0, bool $isPublic = false): array {
         $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
-        $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+        $ip = clouddrop_client_ip();
         $id = $this->db->insert(
             "INSERT INTO files (filename, original_name, user_id, file_size, file_extension, ip_address, folder_id, is_public, uploaded_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())",
             [$filename, $originalName, $userId, $fileSize, $ext, $ip, $folderId, $isPublic ? 1 : 0]
@@ -170,7 +170,7 @@ class FileManager {
         $path = UPLOAD_DIR . $file['filename'];
         if (file_exists($path)) unlink($path);
         $this->db->insert("INSERT INTO activity_log (user_id, action, details, ip_address, created_at) VALUES (?, 'delete', ?, ?, NOW())",
-            [$userId, "Suppression: {$file['original_name']}", $_SERVER['REMOTE_ADDR'] ?? 'unknown']);
+            [$userId, "Suppression: {$file['original_name']}", clouddrop_client_ip()]);
         return true;
     }
 
@@ -200,7 +200,7 @@ class FileManager {
 
         $destName = $folderId > 0 ? $this->getFolderById($folderId)['name'] : 'Racine';
         $this->db->insert("INSERT INTO activity_log (user_id, action, details, ip_address, created_at) VALUES (?, 'move', ?, ?, NOW())",
-            [$userId, "Déplacé: {$file['original_name']} → $destName", $_SERVER['REMOTE_ADDR'] ?? 'unknown']);
+            [$userId, "Déplacé: {$file['original_name']} → $destName", clouddrop_client_ip()]);
         return true;
     }
 
