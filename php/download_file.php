@@ -60,7 +60,7 @@ if (in_array($ext, DANGEROUS_EXTENSIONS)) {
 // Téléchargement
 $fileSize = filesize($realPath);
 $displayName = isset($file['original_name']) ? (string)$file['original_name'] : basename($realPath);
-$displayName = str_replace(["\\r", "\\n", "\\0"], '', $displayName);
+$displayName = str_replace(["\r", "\n", "\0"], '', $displayName);
 $asciiFileName = preg_replace('/[^A-Za-z0-9._ -]/', '_', $displayName) ?: 'download';
 
 header('Content-Type: application/octet-stream');
