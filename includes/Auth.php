@@ -57,7 +57,7 @@ class Auth {
         $db = Database::getInstance();
 
         // Vérifier le verrouillage
-        $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+        $ip = clouddrop_client_ip();
         $lockout = $db->fetchOne(
             "SELECT COUNT(*) as attempts FROM login_attempts WHERE ip_address = ? AND attempted_at > DATE_SUB(NOW(), INTERVAL ? SECOND)",
             [$ip, LOGIN_LOCKOUT_TIME]
@@ -149,7 +149,7 @@ class Auth {
         if (self::isLoggedIn()) {
             $db = Database::getInstance();
             $db->execute("INSERT INTO activity_log (user_id, action, ip_address, created_at) VALUES (?, 'logout', ?, NOW())",
-                [$_SESSION['user_id'], $_SERVER['REMOTE_ADDR'] ?? 'unknown']);
+                [$_SESSION['user_id'], clouddrop_client_ip()]);
         }
 
         $_SESSION = [];
@@ -196,7 +196,7 @@ class Auth {
      */
     public static function getRemainingAttempts(): int {
         $db = Database::getInstance();
-        $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+        $ip = clouddrop_client_ip();
         $result = $db->fetchOne(
             "SELECT COUNT(*) as attempts FROM login_attempts WHERE ip_address = ? AND attempted_at > DATE_SUB(NOW(), INTERVAL ? SECOND)",
             [$ip, LOGIN_LOCKOUT_TIME]
