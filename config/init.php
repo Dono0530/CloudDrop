@@ -85,6 +85,8 @@ if (empty($_SESSION[CSRF_TOKEN_NAME])) {
     $_SESSION[CSRF_TOKEN_NAME] = bin2hex(random_bytes(32));
 }
 
+require_once __DIR__ . '/../includes/ErrorPage.php';
+
 // ── AUTOLOAD DES CLASSES ─────────────────────────────────────────
 spl_autoload_register(function ($class) {
     $paths = [
