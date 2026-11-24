@@ -38,7 +38,10 @@ $siteHeaderIsAdmin = Auth::isAdmin();
                 <?php if ($siteHeaderIsAdmin): ?>
                     <a href="/admin/index.php" class="nav-link<?= $siteHeaderActive('admin') ?>"><i class="bi bi-shield-lock"></i> Admin</a>
                 <?php endif; ?>
-                <a href="/auth/logout.php" class="nav-link nav-link-cta"><i class="bi bi-box-arrow-right"></i> Déconnexion</a>
+                <form method="POST" action="/auth/logout.php" class="site-nav-logout">
+                    <?= Auth::csrfField() ?>
+                    <button type="submit" class="nav-link nav-link-cta"><i class="bi bi-box-arrow-right"></i> Déconnexion</button>
+                </form>
             <?php else: ?>
                 <a href="/auth/login.php" class="nav-link nav-link-cta<?= $siteHeaderActive('login') ?>"><i class="bi bi-box-arrow-in-right"></i> Connexion</a>
                 <a href="/auth/register.php" class="btn-modern btn-outline-modern btn-sm<?= $siteHeaderActive('register') ?>"><i class="bi bi-person-plus"></i> S'inscrire</a>
