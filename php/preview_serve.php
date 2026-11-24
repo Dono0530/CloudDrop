@@ -1,88 +1,120 @@
 <?php
 /**
- * PREVIEW SERVE - Sert un fichier pour l'aperçu via PHP
- * Remplace l'accès direct /uploads/ qui est bloqué par .htaccess
+ * Sert le flux d’aperçu après vérification des droits d’accès.
  */
 require_once __DIR__ . '/../config/init.php';
 require_once __DIR__ . '/../includes/Auth.php';
-Auth::requireLogin();
-
 require_once __DIR__ . '/../includes/FileManager.php';
 
-$fileId = (int)($_GET['id'] ?? 0);
+if (!in_array($_SERVER['REQUEST_METHOD'] ?? 'GET', ['GET', 'HEAD'], true)) {
+    header('Allow: GET, HEAD');
+    http_response_code(405);
+    exit;
+}
+Auth::requireLogin();
+
+$fileId = filter_var($_GET['id'] ?? null, FILTER_VALIDATE_INT);
+if ($fileId === false || $fileId <= 0) render_error_page(404);
+
 $fm = new FileManager();
 $file = $fm->getFileById($fileId);
-
-if (!$file || !$fm->canAccessFile(
-    $file,
-    Auth::isLoggedIn() ? (int)$_SESSION['user_id'] : null,
-    Auth::isAdmin()
-)) {
+if (!$file || !$fm->canAccessFile($file, (int)$_SESSION['user_id'], Auth::isAdmin())) {
     render_error_page(404);
 }
 
-$filePath = UPLOAD_DIR . $file['filename'];
-if (!file_exists($filePath)) { render_error_page(404); }
-
-$ext = strtolower($file['file_extension']);
-
-// Bloquer les extensions dangereuses
-if (in_array($ext, DANGEROUS_EXTENSIONS)) {
-    render_error_page(403);
+$uploadDirectory = realpath(UPLOAD_DIR);
+$filename = basename((string)$file['filename']);
+$filePath = $uploadDirectory !== false
+    ? realpath($uploadDirectory . DIRECTORY_SEPARATOR . $filename)
+    : false;
+if ($filePath === false || !is_file($filePath)
+    || strpos($filePath, $uploadDirectory . DIRECTORY_SEPARATOR) !== 0) {
+    render_error_page(404);
 }
 
-// Déterminer le Content-Type
+$extension = strtolower((string)$file['file_extension']);
+if (in_array($extension, DANGEROUS_EXTENSIONS, true)) render_error_page(403);
+
 $mimeTypes = [
     'jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'png' => 'image/png',
-    'gif' => 'image/gif', 'bmp' => 'image/bmp', 'svg' => 'image/svg+xml',
-    'webp' => 'image/webp', 'ico' => 'image/x-icon',
+    'gif' => 'image/gif', 'bmp' => 'image/bmp', 'webp' => 'image/webp',
     'mp4' => 'video/mp4', 'webm' => 'video/webm', 'ogg' => 'video/ogg',
     'mp3' => 'audio/mpeg', 'wav' => 'audio/wav', 'flac' => 'audio/flac',
     'pdf' => 'application/pdf',
-    'txt' => 'text/plain; charset=utf-8',
-    'csv' => 'text/csv; charset=utf-8',
-    'json' => 'application/json; charset=utf-8',
-    'xml' => 'application/xml; charset=utf-8',
-    'html' => 'text/html; charset=utf-8',
-    'css' => 'text/css; charset=utf-8',
-    'js' => 'application/javascript; charset=utf-8',
-    'md' => 'text/plain; charset=utf-8',
+    'txt' => 'text/plain; charset=utf-8', 'csv' => 'text/plain; charset=utf-8',
+    'json' => 'text/plain; charset=utf-8', 'xml' => 'text/plain; charset=utf-8',
+    'html' => 'text/plain; charset=utf-8', 'css' => 'text/plain; charset=utf-8',
+    'js' => 'text/plain; charset=utf-8', 'md' => 'text/plain; charset=utf-8',
 ];
+if (!isset($mimeTypes[$extension])) render_error_page(403);
 
-$contentType = $mimeTypes[$ext] ?? 'application/octet-stream';
-$fileSize = filesize($filePath);
+$size = filesize($filePath);
+if ($size === false) render_error_page(500);
 
-// Headers
-header('Content-Type: ' . $contentType);
-header('Content-Length: ' . $fileSize);
-header('Cache-Control: private, max-age=3600');
+header('Content-Type: ' . $mimeTypes[$extension]);
+header('Content-Disposition: inline');
+header('Cache-Control: private, no-store');
+header('X-Content-Type-Options: nosniff');
+header('X-Frame-Options: SAMEORIGIN');
+header("Content-Security-Policy: sandbox; default-src 'none'; img-src 'self' data:; media-src 'self'; style-src 'unsafe-inline'; frame-ancestors 'self'");
+header('Cross-Origin-Resource-Policy: same-origin');
 header('Accept-Ranges: bytes');
 
-// Support range requests (pour vidéo/audio)
-if (isset($_SERVER['HTTP_RANGE'])) {
-    $range = $_SERVER['HTTP_RANGE'];
-    $start = 0;
-    $end = $fileSize - 1;
+$start = 0;
+$end = max(0, $size - 1);
+$status = 200;
+$rangeHeader = trim((string)($_SERVER['HTTP_RANGE'] ?? ''));
 
-    if (preg_match('/bytes=(\d+)-(\d*)/', $range, $matches)) {
+if ($rangeHeader !== '') {
+    if (!preg_match('/^bytes=(\\d*)-(\\d*)$/D', $rangeHeader, $matches)
+        || ($matches[1] === '' && $matches[2] === '')) {
+        http_response_code(416);
+        header('Content-Range: bytes */' . $size);
+        exit;
+    }
+
+    if ($matches[1] === '') {
+        $suffixLength = (int)$matches[2];
+        if ($suffixLength <= 0 || $size === 0) {
+            http_response_code(416);
+            header('Content-Range: bytes */' . $size);
+            exit;
+        }
+        $start = max(0, $size - $suffixLength);
+        $end = $size - 1;
+    } else {
         $start = (int)$matches[1];
-        if (!empty($matches[2])) $end = (int)$matches[2];
+        $end = $matches[2] === '' ? $size - 1 : min((int)$matches[2], $size - 1);
     }
 
-    header('HTTP/1.1 206 Partial Content');
-    header('Content-Range: bytes ' . $start . '-' . $end . '/' . $fileSize);
-    header('Content-Length: ' . ($end - $start + 1));
-
-    $handle = fopen($filePath, 'rb');
-    fseek($handle, $start);
-    $remaining = $end - $start + 1;
-    while ($remaining > 0 && !feof($handle)) {
-        $chunkSize = min(8192, $remaining);
-        echo fread($handle, $chunkSize);
-        $remaining -= $chunkSize;
+    if ($size === 0 || $start >= $size || $end < $start) {
+        http_response_code(416);
+        header('Content-Range: bytes */' . $size);
+        exit;
     }
-    fclose($handle);
-} else {
-    readfile($filePath);
+    $status = 206;
+    http_response_code($status);
+    header('Content-Range: bytes ' . $start . '-' . $end . '/' . $size);
 }
+
+$length = $size === 0 ? 0 : ($end - $start + 1);
+header('Content-Length: ' . $length);
+if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'HEAD') exit;
+
+$handle = fopen($filePath, 'rb');
+if ($handle === false) render_error_page(500);
+if ($start > 0 && fseek($handle, $start) !== 0) {
+    fclose($handle);
+    render_error_page(500);
+}
+
+$remaining = $length;
+while ($remaining > 0 && !feof($handle)) {
+    $chunkLength = min(8192, $remaining);
+    $data = fread($handle, $chunkLength);
+    if ($data === false || $data === '') break;
+    echo $data;
+    $remaining -= strlen($data);
+}
+fclose($handle);
 exit;
