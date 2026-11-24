@@ -1,10 +1,11 @@
-# Bloquer toute exécution PHP dans uploads/
-php_flag engine off
+# Les fichiers sont servis uniquement par les contrôleurs PHP après contrôle des droits.
+# Bloquer tout accès HTTP direct, y compris les documents non exécutables.
+Options -Indexes
 
-<FilesMatch "\.php">
+<IfModule mod_authz_core.c>
+    Require all denied
+</IfModule>
+<IfModule !mod_authz_core.c>
     Order Allow,Deny
     Deny from all
-</FilesMatch>
-
-# Empêcher le listage
-Options -Indexes
+</IfModule>
