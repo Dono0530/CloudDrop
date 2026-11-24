@@ -49,9 +49,10 @@ $downloadLimitReached = !$expired && $share['download_limit'] !== null
     <title>Partage - CloudDrop</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="/css/modern.css?v=20261124">
+    <link rel="stylesheet" href="/css/modern.css?v=20261124-4">
 </head>
 <body>
+<?php require __DIR__ . '/../includes/SiteHeader.php'; ?>
 <div class="share-page">
     <div class="share-card card-modern">
         <div class="card-body-modern">
