@@ -166,9 +166,27 @@ class FileManager {
         $file = $this->getFileById($fileId);
         if (!$file) throw new Exception('Fichier introuvable');
         if ((int)$file['user_id'] !== $userId && !$isAdmin) throw new Exception('Permission refusée');
+        $uploadDirectory = realpath(UPLOAD_DIR);
+        if ($uploadDirectory !== false) {
+            $filename = basename((string)$file['filename']);
+            if ($filename === '' || $filename === '.' || $filename === '..') {
+                throw new Exception('Nom de fichier invalide dans le stockage');
+            }
+            $candidatePath = $uploadDirectory . DIRECTORY_SEPARATOR . $filename;
+            if (is_link($candidatePath)) {
+                throw new Exception('Lien de stockage inattendu');
+            }
+            $realPath = realpath($candidatePath);
+            if ($realPath !== false
+                && (strpos($realPath, $uploadDirectory . DIRECTORY_SEPARATOR) !== 0 || !is_file($realPath))) {
+                throw new Exception('Chemin de stockage invalide');
+            }
+            if ($realPath !== false && !unlink($realPath)) {
+                throw new Exception('Impossible de supprimer le fichier du stockage');
+            }
+        }
+
         $this->db->execute("UPDATE files SET deleted_at = NOW(), deleted_by = ? WHERE id = ?", [$userId, $fileId]);
-        $path = UPLOAD_DIR . $file['filename'];
-        if (file_exists($path)) unlink($path);
         $this->db->insert("INSERT INTO activity_log (user_id, action, details, ip_address, created_at) VALUES (?, 'delete', ?, ?, NOW())",
             [$userId, "Suppression: {$file['original_name']}", clouddrop_client_ip()]);
         return true;
