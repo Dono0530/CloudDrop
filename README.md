@@ -93,21 +93,20 @@ Ce serveur intégré est destiné au développement, pas à une mise en producti
 
 ## Mise à jour d'une installation existante
 
-Avant la mise à jour, sauvegardez la base, config/config.php et le dossier uploads/. Déployez le code de la branche choisie sans écraser la configuration ni les fichiers déposés.
+Avant la mise à jour, sauvegardez la base, config/config.php et le dossier uploads/. Déployez le code de dev sans écraser la configuration ni les fichiers déposés.
 
-Appliquez seulement les migrations qui ne sont pas encore présentes dans la base. Chaque migration qui ajoute des colonnes doit être exécutée une seule fois :
+Pour mettre à jour une base existante, sélectionnez d'abord la bonne base et exécutez le fichier unique :
 
 ~~~bash
-mysql -u UTILISATEUR -p NOM_BASE < config/migrate_file_visibility.sql
-mysql -u UTILISATEUR -p NOM_BASE < config/migrate_share_security.sql
+mysql -u UTILISATEUR -p NOM_BASE < config/migrate_all.sql
 ~~~
 
-- migrate_file_visibility.sql ajoute le choix public/privé.
-- migrate_share_security.sql ajoute les mots de passe, limites et journaux de partage.
-- Si migrate_share_security.sql avait déjà été exécutée avant cette version, exécutez une fois config/migrate_share_preview_logs.sql et config/migrate_share_password_attempts.sql. La première ajoute le type d'événement aux journaux ; la seconde active la limitation des erreurs de mot de passe.
-- Une nouvelle installation importe schema.sql et n'exécute pas ces migrations ensuite.
+Cette migration vérifie chaque colonne et table avant de l'ajouter. Elle peut donc être relancée sans dupliquer les éléments déjà présents. Elle couvre la visibilité des fichiers, les protections des liens, les journaux d'aperçu et la limitation des essais de mot de passe.
 
-Une migration déjà appliquée peut échouer si elle est relancée. Vérifiez la structure de la base avant toute nouvelle tentative.
+Avec phpMyAdmin, sélectionnez la base puis importez config/migrate_all.sql. Ne lancez pas simultanément les anciennes migrations individuelles.
+
+Une nouvelle installation importe config/schema.sql ; elle n'a pas besoin d'exécuter migrate_all.sql.
+
 
 ## Utilisation
 
