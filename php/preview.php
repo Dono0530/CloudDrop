@@ -18,8 +18,7 @@ if (!$file || !$fm->canAccessFile(
     Auth::isLoggedIn() ? (int)$_SESSION['user_id'] : null,
     Auth::isAdmin()
 )) {
-    http_response_code(404);
-    die('Fichier introuvable');
+    render_error_page(404);
 }
 
 $ext = strtolower($file['file_extension']);
