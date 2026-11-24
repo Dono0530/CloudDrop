@@ -155,7 +155,7 @@ Sauvegardez régulièrement la base et les fichiers téléversés, et protégez 
 
 ## Compte administrateur
 
-Dans l'onglet Utilisateurs du panneau d'administration, un administrateur peut suspendre un compte standard pour 1 heure, 24 heures, 7 jours, 30 jours ou définitivement, avec un motif facultatif, puis lever le bannissement. L'onglet Contrôle du site permet d'activer la maintenance (les admins gardent l'accès), de bloquer les uploads ou de bloquer les téléchargements et aperçus. Ces actions sont consignées dans l'activité.
+Dans l'onglet Utilisateurs du panneau d'administration, un administrateur peut suspendre un compte standard pour 1 heure, 24 heures, 7 jours, 30 jours ou définitivement, avec un motif facultatif, puis modifier sa durée ou lever le bannissement. Le temps restant est affiché dans le panneau et communiqué au membre concerné lors de la suspension ou de sa prochaine connexion. L'onglet Contrôle du site permet d'activer la maintenance (les admins gardent l'accès), de bloquer les uploads ou de bloquer les téléchargements et aperçus. Ces actions sont consignées dans l'activité.
 
 Après inscription, attribuez le rôle admin depuis une session SQL protégée :
 
