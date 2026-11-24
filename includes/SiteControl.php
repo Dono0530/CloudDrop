@@ -177,7 +177,7 @@ class SiteControl {
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow">
 <title>' . $status . ' · ' . $safeTitle . ' — CloudDrop</title>
-<link rel="stylesheet" href="/css/modern.css?v=20261124-3">
+<link rel="stylesheet" href="/css/modern.css?v=20261124-4">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 <style>
 .service-error-page{min-height:100vh;display:flex;flex-direction:column;padding:0;background:radial-gradient(ellipse at 12% 0%,rgba(99,102,241,.16),transparent 42%),radial-gradient(ellipse at 100% 100%,rgba(6,182,212,.13),transparent 40%),var(--light,#f8fafc);color:var(--text,#1e293b);font-family:Inter,system-ui,sans-serif}
