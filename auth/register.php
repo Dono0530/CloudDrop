@@ -76,9 +76,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                            placeholder="Minimum 8 caractères" required minlength="8"
                            oninput="checkPasswordStrength(this.value)">
                     <div class="password-strength">
-                        <div class="strength-bar" id="strengthBar"></div>
+                        <div class="strength-bar" id="strengthBar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
                     </div>
-                    <small id="strengthText" style="font-size:0.75rem;color:var(--text-muted);"></small>
+                    <small id="strengthText" aria-live="polite" style="font-size:0.75rem;color:var(--text-muted);"></small>
                 </div>
 
                 <div class="form-group-modern">
@@ -112,18 +112,23 @@ function checkPasswordStrength(password) {
     if (/[0-9]/.test(password)) score++;
     if (/[^A-Za-z0-9]/.test(password)) score++;
 
-    bar.className = 'strength-bar';
     const levels = [
-        { cls: '', label: '' },
-        { cls: 'strength-weak', label: 'Faible' },
-        { cls: 'strength-fair', label: 'Moyen' },
-        { cls: 'strength-good', label: 'Bon' },
-        { cls: 'strength-good', label: 'Bon' },
-        { cls: 'strength-strong', label: 'Fort' },
+        { label: '', width: 0, color: '' },
+        { label: 'Faible', width: 25, color: '--danger' },
+        { label: 'Moyen', width: 50, color: '--warning' },
+        { label: 'Bon', width: 75, color: '--accent' },
+        { label: 'Bon', width: 75, color: '--accent' },
+        { label: 'Fort', width: 100, color: '--success' },
     ];
-    const level = levels[Math.min(score, 5)];
-    if (level.cls) bar.classList.add(level.cls);
+    const level = levels[Math.min(score, levels.length - 1)];
+    const color = level.color ? getComputedStyle(document.documentElement).getPropertyValue(level.color).trim() : 'transparent';
+
+    bar.className = 'strength-bar';
+    bar.style.width = level.width + '%';
+    bar.style.backgroundColor = color;
+    bar.setAttribute('aria-valuenow', String(level.width));
     text.textContent = level.label ? 'Force : ' + level.label : '';
+    text.style.color = level.color ? color : 'var(--text-muted)';
 }
 </script>
 </body>
