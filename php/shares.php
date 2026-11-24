@@ -190,5 +190,6 @@ function updateShareCountdowns() {
 updateShareCountdowns();
 setInterval(updateShareCountdowns, 1000);
 </script>
+<?php require __DIR__ . '/../includes/SiteFooter.php'; ?>
 </body>
 </html>
