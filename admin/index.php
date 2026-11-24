@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 require_once __DIR__ . '/../config/init.php';
 require_once __DIR__ . '/../includes/Auth.php';
 Auth::requireAdmin();
@@ -6,6 +6,7 @@ Auth::requireAdmin();
 require_once __DIR__ . '/../includes/FileManager.php';
 
 $fm = new FileManager();
+$siteControl = new SiteControl();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!Auth::validateCsrf($_POST[CSRF_TOKEN_NAME] ?? '')) { $flashError = 'Jeton CSRF invalide.'; }
@@ -25,6 +26,48 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $db->execute("DELETE FROM users WHERE id = ?", [$uid]);
                     $flashSuccess = 'Utilisateur supprimé.';
                 }
+            } elseif ($action === 'ban_user') {
+                $uid = (int)($_POST['user_id'] ?? 0);
+                $target = Database::getInstance()->fetchOne('SELECT id, role FROM users WHERE id = ?', [$uid]);
+                $duration = (string)($_POST['duration'] ?? '');
+                $durations = ['3600' => 3600, '86400' => 86400, '604800' => 604800, '2592000' => 2592000, 'permanent' => 0];
+                if (!$target || $target['role'] !== 'user' || !isset($durations[$duration])) {
+                    $flashError = 'Utilisateur ou durée de bannissement invalide.';
+                } else {
+                    $reason = trim((string)($_POST['ban_reason'] ?? ''));
+                    $reason = substr($reason, 0, 255);
+                    $seconds = $durations[$duration];
+                    $untilSql = $seconds > 0 ? 'DATE_ADD(NOW(), INTERVAL ' . $seconds . ' SECOND)' : 'NULL';
+                    Database::getInstance()->execute(
+                        "UPDATE users SET is_banned = 1, banned_until = {$untilSql}, ban_reason = ? WHERE id = ? AND role = 'user'",
+                        [$reason !== '' ? $reason : null, $uid]
+                    );
+                    Database::getInstance()->execute(
+                        'INSERT INTO activity_log (user_id, action, details, ip_address, created_at) VALUES (?, ?, ?, ?, NOW())',
+                        [(int)$_SESSION['user_id'], 'admin_user_ban', 'Bannissement de l’utilisateur #' . $uid . ($reason !== '' ? ' : ' . $reason : ''), clouddrop_client_ip()]
+                    );
+                    $flashSuccess = $seconds > 0 ? 'Bannissement temporaire appliqué.' : 'Bannissement permanent appliqué.';
+                }
+            } elseif ($action === 'unban_user') {
+                $uid = (int)($_POST['user_id'] ?? 0);
+                Database::getInstance()->execute("UPDATE users SET is_banned = 0, banned_until = NULL, ban_reason = NULL WHERE id = ? AND role = 'user'", [$uid]);
+                Database::getInstance()->execute(
+                    'INSERT INTO activity_log (user_id, action, details, ip_address, created_at) VALUES (?, ?, ?, ?, NOW())',
+                    [(int)$_SESSION['user_id'], 'admin_user_unban', 'Levée du bannissement de l’utilisateur #' . $uid, clouddrop_client_ip()]
+                );
+                $flashSuccess = 'Bannissement levé.';
+            } elseif ($action === 'save_controls') {
+                $siteControl->saveSettings([
+                    'maintenance_mode' => ($_POST['maintenance_mode'] ?? '0') === '1',
+                    'uploads_disabled' => ($_POST['uploads_disabled'] ?? '0') === '1',
+                    'downloads_disabled' => ($_POST['downloads_disabled'] ?? '0') === '1',
+                    'maintenance_message' => (string)($_POST['maintenance_message'] ?? ''),
+                ]);
+                Database::getInstance()->execute(
+                    'INSERT INTO activity_log (user_id, action, details, ip_address, created_at) VALUES (?, ?, ?, ?, NOW())',
+                    [(int)$_SESSION['user_id'], 'admin_site_controls', 'Réglages de disponibilité du site modifiés', clouddrop_client_ip()]
+                );
+                $flashSuccess = 'Réglages du site enregistrés.';
             } else { $flashError = 'Action inconnue.'; }
         } catch (Exception $e) { $flashError = $e->getMessage(); }
     }
@@ -36,6 +79,7 @@ $activity = $fm->getRecentActivity(30);
 $db = Database::getInstance();
 $users = $db->fetchAll("SELECT u.*, COUNT(f.id) as file_count, COALESCE(SUM(f.file_size), 0) as total_size FROM users u LEFT JOIN files f ON u.id = f.user_id AND f.deleted_at IS NULL GROUP BY u.id ORDER BY u.id");
 $tab = $_GET['tab'] ?? 'files';
+$controls = $siteControl->settings();
 ?>
 <!DOCTYPE html>
 <html lang="fr" data-theme="light">
@@ -113,6 +157,7 @@ $tab = $_GET['tab'] ?? 'files';
         <a href="?tab=files" class="filter-pill <?= $tab === 'files' ? 'active' : '' ?>"><i class="bi bi-file-earmark"></i> Fichiers</a>
         <a href="?tab=users" class="filter-pill <?= $tab === 'users' ? 'active' : '' ?>"><i class="bi bi-people"></i> Utilisateurs</a>
         <a href="?tab=activity" class="filter-pill <?= $tab === 'activity' ? 'active' : '' ?>"><i class="bi bi-lightning-charge"></i> Activité</a>
+        <a href="?tab=settings" class="filter-pill <?= $tab === 'settings' ? 'active' : '' ?>"><i class="bi bi-sliders"></i> Contrôle du site</a>
     </div>
 
     <?php if ($tab === 'files'): ?>
@@ -162,25 +207,52 @@ $tab = $_GET['tab'] ?? 'files';
         <div class="card-body-modern p-0">
             <div style="overflow-x:auto;">
                 <table class="table-modern">
-                    <thead><tr><th>Utilisateur</th><th>Rôle</th><th>Fichiers</th><th>Espace</th><th>Action</th></tr></thead>
+                    <thead><tr><th>Utilisateur</th><th>Rôle</th><th>État</th><th>Fichiers</th><th>Espace</th><th>Actions</th></tr></thead>
                     <tbody>
                         <?php foreach ($users as $u): ?>
                         <tr>
                             <td><div class="d-flex align-items-center gap-2"><div class="avatar"><?= strtoupper(substr($u['pseudo'], 0, 1)) ?></div><div><div style="font-weight:500;"><?= htmlspecialchars($u['pseudo']) ?></div><div style="font-size:0.75rem;color:var(--text-muted);">ID: <?= $u['id'] ?></div></div></div></td>
                             <td><span class="badge-modern <?= $u['role'] === 'admin' ? 'badge-danger' : 'badge-primary' ?>"><?= htmlspecialchars($u['role']) ?></span></td>
+                            <?php $userBanned = $u['role'] === 'user' && !empty($u['is_banned']) && (empty($u['banned_until']) || strtotime($u['banned_until']) > time()); ?>
+                            <td>
+                                <?php if ($userBanned): ?>
+                                    <span class="badge-modern badge-danger"><?= empty($u['banned_until']) ? 'Banni définitivement' : 'Banni temporairement' ?></span>
+                                    <?php if (!empty($u['ban_reason'])): ?><div style="font-size:.75rem;color:var(--text-muted);"><?= htmlspecialchars($u['ban_reason']) ?></div><?php endif; ?>
+                                <?php else: ?><span class="badge-modern badge-success">Actif</span><?php endif; ?>
+                            </td>
                             <td><?= $u['file_count'] ?></td>
                             <td><?= FileManager::formatBytes($u['total_size']) ?></td>
                             <td>
-                                <?php if ((int)$u['id'] !== (int)$_SESSION['user_id']): ?>
-                                <form method="POST" onsubmit="return confirm('Supprimer cet utilisateur et tous ses fichiers ?');" style="display:inline;">
-                                    <?= Auth::csrfField() ?>
-                                    <input type="hidden" name="action" value="delete_user">
-                                    <input type="hidden" name="user_id" value="<?= $u['id'] ?>">
-                                    <button type="submit" class="btn-modern btn-ghost btn-sm" style="color:var(--danger);"><i class="bi bi-trash3"></i> Supprimer</button>
-                                </form>
-                                <?php else: ?>
-                                    <span class="badge-modern badge-success">Vous</span>
+                                <?php if ($u['role'] === 'user'): ?>
+                                    <?php if ($userBanned): ?>
+                                        <form method="POST" style="display:inline;">
+                                            <?= Auth::csrfField() ?>
+                                            <input type="hidden" name="action" value="unban_user">
+                                            <input type="hidden" name="user_id" value="<?= (int)$u['id'] ?>">
+                                            <button type="submit" class="btn-modern btn-outline-modern btn-sm"><i class="bi bi-unlock"></i> Lever le bannissement</button>
+                                        </form>
+                                    <?php else: ?>
+                                        <form method="POST" class="d-flex flex-wrap gap-1 align-items-center">
+                                            <?= Auth::csrfField() ?>
+                                            <input type="hidden" name="action" value="ban_user">
+                                            <input type="hidden" name="user_id" value="<?= (int)$u['id'] ?>">
+                                            <select name="duration" class="form-control-modern" style="width:auto;padding:.35rem;">
+                                                <option value="3600">1 heure</option><option value="86400">24 heures</option>
+                                                <option value="604800">7 jours</option><option value="2592000">30 jours</option>
+                                                <option value="permanent">Permanent</option>
+                                            </select>
+                                            <input type="text" name="ban_reason" class="form-control-modern" maxlength="255" placeholder="Motif (facultatif)" style="width:170px;padding:.35rem;">
+                                            <button type="submit" class="btn-modern btn-outline-modern btn-sm" onclick="return confirm('Bannir cet utilisateur ?');"><i class="bi bi-person-slash"></i> Bannir</button>
+                                        </form>
+                                    <?php endif; ?>
                                 <?php endif; ?>
+                                <?php if ((int)$u['id'] !== (int)$_SESSION['user_id']): ?>
+                                    <form method="POST" onsubmit="return confirm('Supprimer cet utilisateur et tous ses fichiers ?');" style="display:inline;">
+                                        <?= Auth::csrfField() ?><input type="hidden" name="action" value="delete_user">
+                                        <input type="hidden" name="user_id" value="<?= (int)$u['id'] ?>">
+                                        <button type="submit" class="btn-modern btn-ghost btn-sm" style="color:var(--danger);"><i class="bi bi-trash3"></i> Supprimer</button>
+                                    </form>
+                                <?php else: ?><span class="badge-modern badge-success">Vous</span><?php endif; ?>
                             </td>
                         </tr>
                         <?php endforeach; ?>
@@ -215,6 +287,53 @@ $tab = $_GET['tab'] ?? 'files';
                     </table>
                 </div>
             <?php endif; ?>
+        </div>
+    </div>
+    <?php elseif ($tab === 'settings'): ?>
+    <div class="row g-4">
+        <div class="col-xl-7">
+            <div class="card-modern">
+                <div class="card-header-modern"><i class="bi bi-sliders"></i> Disponibilité du service</div>
+                <div class="card-body-modern">
+                    <form method="POST">
+                        <?= Auth::csrfField() ?>
+                        <input type="hidden" name="action" value="save_controls">
+                        <input type="hidden" name="maintenance_mode" value="0">
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" role="switch" id="maintenance_mode" name="maintenance_mode" value="1" <?= $controls['maintenance_mode'] === '1' ? 'checked' : '' ?>>
+                            <label class="form-check-label" for="maintenance_mode"><strong>Mode maintenance</strong></label>
+                            <div class="text-muted small">Les visiteurs et les comptes standards voient une page d’indisponibilité. Les administrateurs gardent l’accès.</div>
+                        </div>
+                        <input type="hidden" name="uploads_disabled" value="0">
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" role="switch" id="uploads_disabled" name="uploads_disabled" value="1" <?= $controls['uploads_disabled'] === '1' ? 'checked' : '' ?>>
+                            <label class="form-check-label" for="uploads_disabled"><strong>Bloquer les uploads</strong></label>
+                            <div class="text-muted small">Bloque les nouveaux transferts de fichiers, y compris les envois par morceaux.</div>
+                        </div>
+                        <input type="hidden" name="downloads_disabled" value="0">
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" role="switch" id="downloads_disabled" name="downloads_disabled" value="1" <?= $controls['downloads_disabled'] === '1' ? 'checked' : '' ?>>
+                            <label class="form-check-label" for="downloads_disabled"><strong>Bloquer téléchargements et aperçus</strong></label>
+                            <div class="text-muted small">Bloque les téléchargements, les aperçus privés et ceux des liens de partage.</div>
+                        </div>
+                        <label class="form-label" for="maintenance_message">Message affiché pendant la maintenance</label>
+                        <textarea class="form-control-modern w-100 mb-3" id="maintenance_message" name="maintenance_message" rows="3" maxlength="300"><?= htmlspecialchars($controls['maintenance_message'], ENT_QUOTES, 'UTF-8') ?></textarea>
+                        <button class="btn-modern btn-primary-modern" type="submit"><i class="bi bi-check-lg"></i> Enregistrer les réglages</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-5">
+            <div class="card-modern">
+                <div class="card-header-modern"><i class="bi bi-activity"></i> État actuel</div>
+                <div class="card-body-modern">
+                    <p>Site : <span class="badge-modern <?= $controls['maintenance_mode'] === '1' ? 'badge-danger' : 'badge-success' ?>"><?= $controls['maintenance_mode'] === '1' ? 'Maintenance' : 'En ligne' ?></span></p>
+                    <p>Uploads : <span class="badge-modern <?= $controls['uploads_disabled'] === '1' ? 'badge-warning' : 'badge-success' ?>"><?= $controls['uploads_disabled'] === '1' ? 'Bloqués' : 'Autorisés' ?></span></p>
+                    <p>Téléchargements : <span class="badge-modern <?= $controls['downloads_disabled'] === '1' ? 'badge-warning' : 'badge-success' ?>"><?= $controls['downloads_disabled'] === '1' ? 'Bloqués' : 'Autorisés' ?></span></p>
+                    <p class="small text-muted mb-0">Les changements sont appliqués immédiatement aux prochaines requêtes. Les transferts déjà commencés s’arrêtent lors de leur prochain morceau.</p>
+                </div>
+            </div>
+            <div class="alert-modern alert-info-modern mt-3"><i class="bi bi-shield-check"></i><div>Les bannissements et changements de disponibilité sont consignés dans l’onglet Activité.</div></div>
         </div>
     </div>
     <?php endif; ?>
