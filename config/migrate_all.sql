@@ -60,3 +60,39 @@ CREATE TABLE IF NOT EXISTS share_password_attempts (
     attempted_at DATETIME NOT NULL,
     INDEX idx_share_password_attempt (share_id, ip_address, attempted_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+
+-- Gestion des bannissements de comptes
+SET @sql = IF(
+    (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = @db_name AND TABLE_NAME = 'users' AND COLUMN_NAME = 'is_banned') = 0,
+    'ALTER TABLE users ADD COLUMN is_banned TINYINT(1) NOT NULL DEFAULT 0 AFTER role',
+    'SELECT 1'
+);
+PREPARE clouddrop_stmt FROM @sql; EXECUTE clouddrop_stmt; DEALLOCATE PREPARE clouddrop_stmt;
+
+SET @sql = IF(
+    (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = @db_name AND TABLE_NAME = 'users' AND COLUMN_NAME = 'banned_until') = 0,
+    'ALTER TABLE users ADD COLUMN banned_until DATETIME DEFAULT NULL AFTER is_banned',
+    'SELECT 1'
+);
+PREPARE clouddrop_stmt FROM @sql; EXECUTE clouddrop_stmt; DEALLOCATE PREPARE clouddrop_stmt;
+
+SET @sql = IF(
+    (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = @db_name AND TABLE_NAME = 'users' AND COLUMN_NAME = 'ban_reason') = 0,
+    'ALTER TABLE users ADD COLUMN ban_reason VARCHAR(255) DEFAULT NULL AFTER banned_until',
+    'SELECT 1'
+);
+PREPARE clouddrop_stmt FROM @sql; EXECUTE clouddrop_stmt; DEALLOCATE PREPARE clouddrop_stmt;
+
+-- Options de maintenance et contrôles du service
+CREATE TABLE IF NOT EXISTS site_settings (
+    setting_key VARCHAR(100) PRIMARY KEY,
+    setting_value TEXT NOT NULL,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+INSERT IGNORE INTO site_settings (setting_key, setting_value) VALUES
+    ('maintenance_mode', '0'),
+    ('uploads_disabled', '0'),
+    ('downloads_disabled', '0'),
+    ('maintenance_message', 'Le service est temporairement indisponible pour maintenance.');
